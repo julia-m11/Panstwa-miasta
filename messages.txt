@@ -1,0 +1,16 @@
+
+Okno dolaczenia do serwera
+
+- {"type":"connecting_with_server","nick":"Alicja"} - klient -> serwer - proba polaczenia z serwerem
+- {"type": "nick_accepted", "session_id": 12345} - serwer -> klient - udalo sie uzyskac polaczenie
+- {"type": "nick_rejected", "reason": "Ten nick jest zajęty"} - serwer -> klient - gdy nick jest juz zajety
+
+- {"type": "network_error", "reason": "Brak połączenia."} - serwer -> klient - jesli nie udało się połaczyc z serwerem, to jest 
+  obsluzone w kliencie kiedy nie uda sie nawiazac polaczenia, wiec nie musisz tego obslugiwac, ale wolalam wypisac zeby sie nie pogubic
+- {"type": "didnt_send", "reason": "Nie udało się wysłać wiadomości."} - jest polaczenie z serwerem, ale nie udalo sie wyslac, to samo co poprzednie
+    nie musisz tego obslugiwac
+
+session_id - ID sesji służy jako unikalny identyfikator połączenia, mechanizm do rozpoznawania i zarządzania aktywnym klientem.
+
+Wszystkie wiadomości wysyłane przez serwer i klienta muszą kończyć się znakiem nowej linii (\n) np. {"type": "nazwa_komunikatu", "pole1": "wartosc"} + \n
+aby oddzielic pojedyncza wiadomosc
