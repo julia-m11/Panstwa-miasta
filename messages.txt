@@ -10,7 +10,42 @@ Okno dolaczenia do serwera
 - {"type": "didnt_send", "reason": "Nie udało się wysłać wiadomości."} - jest polaczenie z serwerem, ale nie udalo sie wyslac, to samo co poprzednie
     nie musisz tego obslugiwac
 
-session_id - ID sesji służy jako unikalny identyfikator połączenia, mechanizm do rozpoznawania i zarządzania aktywnym klientem.
 
 Wszystkie wiadomości wysyłane przez serwer i klienta muszą kończyć się znakiem nowej linii (\n) np. {"type": "nazwa_komunikatu", "pole1": "wartosc"} + \n
 aby oddzielic pojedyncza wiadomosc
+
+1. nick jest zaakceptownay
+2.wysylam do serwera {"type": "REQUEST_GAME_INFO"} 
+3 odpowiedz od serwera to ,...}
+"IN_ROUND" - gra trwa rozpoczala sie runda
+{
+    "type": "GAME_STATUS",
+    "game_status": "IN_ROUND",                 
+    "current_round": 1,                     
+}
+"LOBBY" - gdy nie ma dwóch graczy, lub gdy jest ich dwójka i czekamy minute na innych aby rozpoczac
+{
+    "type": "GAME_STATUS",
+    "game_status": "LOBBY",                
+    "waiting_status": "COUNTDOWN", // COUNTDOWN (odliczanie) lub IDLE (bez odliczania czyli czekamy na dwoch graczy)
+    "time_remaining": 45           // Czas pozostały do startu/anulowania (w sekundach)
+}
+"GAME_OVER" - gra sie zakonczyla
+{
+    "type": "GAME_STATUS",
+    "game_status": "GAME_OVER",                                
+}
+4. w zaleznosci od stanu pokazuje sie konkretne okno 
+- in round
+dwa przyciski :
+1. dolacz do nastepnej rundy - klient -> serwer {"type": "WANT_TO_PLAY_IN_NEXT_ROUND"}
+                               
+2. dolacz od nastepnej gry - klient -> serwer {"type": "WANT_TO_QUEUE"} 
+
+- lobby 
+jeden przycisk :
+1. dolacz do nowej gry : klient -> serwer {"type": "WANT_TO_PLAY"}
+po zakonczeniu odliczania serwer -> klient {"type": "ROUND_START", "round": 1, "letter": "A", "time": 60}
+
+- game GAME_OVER
+po wyswietleniu wynikow przechodzi do okna lobby
