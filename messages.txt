@@ -16,7 +16,7 @@ aby oddzielic pojedyncza wiadomosc
 
 1. nick jest zaakceptownay
 2.wysylam do serwera {"type": "REQUEST_GAME_INFO"} 
-3 odpowiedz od serwera to ,...}
+3 odpowiedz od serwera to ,...
 "IN_ROUND" - gra trwa rozpoczala sie runda
 {
     "type": "GAME_STATUS",
@@ -30,6 +30,7 @@ aby oddzielic pojedyncza wiadomosc
     "waiting_status": "COUNTDOWN", // COUNTDOWN (odliczanie) lub IDLE (bez odliczania czyli czekamy na dwoch graczy)
     "time_remaining": 45           // Czas pozostały do startu/anulowania (w sekundach)
 }
+na pewno serwer musi komunikowac ze skonczylo sie odliczanie
 "GAME_OVER" - gra sie zakonczyla
 {
     "type": "GAME_STATUS",
@@ -38,14 +39,36 @@ aby oddzielic pojedyncza wiadomosc
 4. w zaleznosci od stanu pokazuje sie konkretne okno 
 - in round
 dwa przyciski :
-1. dolacz do nastepnej rundy - klient -> serwer {"type": "WANT_TO_PLAY_IN_NEXT_ROUND"}
+    1. dolacz do nastepnej rundy - klient -> serwer {"type": "WANT_TO_PLAY_IN_NEXT_ROUND"}
                                
-2. dolacz od nastepnej gry - klient -> serwer {"type": "WANT_TO_QUEUE"} 
+    2. dolacz od nastepnej gry - klient -> serwer {"type": "WANT_TO_QUEUE"} 
 
-- lobby 
-jeden przycisk :
-1. dolacz do nowej gry : klient -> serwer {"type": "WANT_TO_PLAY"}
-po zakonczeniu odliczania serwer -> klient {"type": "ROUND_START", "round": 1, "letter": "A", "time": 60}
+    - lobby - zmiana jednak nie ma przycisku
+    klient po wejsciu do lobby wysyla klient -> serwer {"type": "WANT_TO_PLAY"} 
+    opcja a) tutaj serwer musi informowac klienta o zmianie stanu np kiedy na poczatku jest stan 
+        "type": "GAME_STATUS",
+        "game_status": "LOBBY",                
+        "waiting_status": "IDLE" (czyli czekanie na drugiegio gracza)
+    gdy dołaczy ten drugi, serwer musi wyslac do klienta 
+        "type": "GAME_STATUS",
+        "game_status": "LOBBY",                
+        "waiting_status": "COUNTDOWN",
+        "time_remaining": np 45 
 
-- game GAME_OVER
-po wyswietleniu wynikow przechodzi do okna lobby
+    opcja b) gracz w chodzi w czasie countdown 
+
+    - game GAME_OVER
+    po wyswietleniu wynikow przechodzi do okna lobby
+
+5. Odnoscie okna gry, kiedy jest min dwoch graczy i skonczy sie oczekiwanie na reszte serwer wysyla wiadomosc
+    "type": "ROUND_START",
+    "current_round": 1,
+    "letter": "B",
+    "current_points": 0, //serwer musi w tym miejscu odsylac ile dany gracz ma punktow sumarycznie
+    "players_count": 2 
+    opcja a) gdy gracz wpisze odpowiedzi i jest pierwsza osoba ktora konczy do serwera wysylana jest wiadomosc:
+        {'type': 'ROUND_END_ANSWERS', 'answers': {'państwo': 'lalala', 'miasto': 'dd', 'roślina': 'dd', 'zwierzę': 'dd', 'rzecz': 'dd'}, 'is_first': True}
+        gdy wartosc is_first = true -> serwer wysyla pozostalym graczom wiadomosc:
+            "type": "TIME_WARNING",
+            "time_left": 15 //to oznacza ze reszta ma 15s na odpowiedz
+    opcja b) z flaga is_first = false - raczej nie bedzie wymagac zadnej odpowiedzi
