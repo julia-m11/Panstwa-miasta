@@ -139,6 +139,7 @@ class Lobby(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.kontroler = kontroler
         self.config(bg='lightblue')
+        self.is_joined = False
 
         #timer dla countdown
         self.countdown_id = None    # ID timera Tkinter (dla self.after)
@@ -390,6 +391,73 @@ class Game_window(tk.Frame):
         else:
             self.warning_label.config(text="CZAS MINĄŁ!")
             self.send_answers(is_first=False) #automatyczne wysylanie
+
+# ------------------------------okno wynikow---------------------------------------------
+
+class Result_window(tk.Frame):
+    def __init__(self, parent, kontroler):
+        tk.Frame.__init__(self, parent)
+        self.kontroler = kontroler
+        self.config(bg='#f0f0f0')
+        self.quit_timer_id = None
+
+        tk.Label(self, text="KONIEC GRY - WYNIKI", font=("Arial", 26, "bold"), bg='#f0f0f0').pack(pady=30)
+
+        self.personal_result_label = tk.Label(self, text="", font=("Arial", 18), bg='#f0f0f0', fg="blue")
+        self.personal_result_label.pack(pady=10)
+
+        tk.Label(self, text="TOP 3 GRACZY:", font=("Arial", 16, "underline"), bg='#f0f0f0').pack(pady=(20, 10))
+        self.ranking_label = tk.Label(self, text="", font=("Courier", 14), bg='white', relief="sunken", width=40, height=5)
+        self.ranking_label.pack(pady=10)
+
+        # Label informujący o powrocie do lobby
+        self.timer_label = tk.Label(self, text="", font=("Arial", 12), fg="darkgreen", bg='#f0f0f0')
+        self.timer_label.pack(pady=20)
+
+        btn_frame = tk.Frame(self, bg='#f0f0f0')
+        btn_frame.pack(pady=20)
+
+        # Zostawiamy tylko przycisk wyjścia
+        self.btn_quit = ttk.Button(btn_frame, text="Wyjdź z gry", command=self.kontroler.on_closing)
+        self.btn_quit.pack(pady=10)
+
+    def show_results(self, data):
+        your_place = data.get("your_place", "?")
+        your_total = data.get("total_points", 0)
+        top_3 = data.get("top_3", [])
+
+        self.personal_result_label.config(
+            text=f"Zająłeś/aś {your_place} miejsce z {your_total} punktami!"
+        )
+
+        ranking_text = ""
+        for i, player in enumerate(top_3):
+            ranking_text += f"{i+1}. {player['nick']} - {player['points']} pkt\n"
+        
+        self.ranking_label.config(text=ranking_text)
+        
+        # Startujemy odliczanie do POWROTU DO LOBBY
+        self.start_return_timer(20)
+
+    def start_return_timer(self, seconds):
+        if self.quit_timer_id:
+            self.after_cancel(self.quit_timer_id)
+            
+        if seconds > 0:
+            self.timer_label.config(text=f"Powrót do poczekalni za: {seconds} s...")
+            self.quit_timer_id = self.after(1000, lambda: self.start_return_timer(seconds - 1))
+        else:
+            print("[GUI] Czas wyświetlania wyników minął. Wracam do Lobby.")
+            self.return_to_lobby()
+
+    def return_to_lobby(self):
+        """Zatrzymuje timer i wraca do Lobby."""
+        if self.quit_timer_id:
+            self.after_cancel(self.quit_timer_id)
+            self.quit_timer_id = None
+        
+        # Przełączamy na Lobby - to automatycznie wywoła REQUEST_GAME_INFO w App.pokaz_ekran
+        self.kontroler.pokaz_ekran(Lobby)
     
 # ------------------------------glowne okno----------------------------------------------
 
@@ -416,7 +484,7 @@ class App(tk.Tk):
 
         self.ekrany = {}
         
-        for F in (Log_in_window, Lobby, Game_window):
+        for F in (Log_in_window, Lobby, Game_window, Result_window):
             ekran_name = F.__name__
             frame = F(parent=kontener, kontroler=self) 
             self.ekrany[ekran_name] = frame
@@ -442,9 +510,7 @@ class App(tk.Tk):
 
         if klasa_ekranu == Lobby:
             frame.show_lobby() # Wywołaj nową metodę w Lobby
-            print("[GUI] Automatyczne zgłoszenie gotowości (WANT_TO_PLAY)...")
-            frame.send_lobby_choice("WANT_TO_PLAY")
-
+        
     def on_closing(self): #przy wyjsciu z aplikacji
         if self.socket_polaczenia:
             try:
@@ -505,7 +571,8 @@ class App(tk.Tk):
                 "nick_rejected" : self.handle_nick_rejected,
                 "GAME_STATUS" : self.handle_game_status,
                 "ROUND_START": self.handle_round_start,
-                "TIME_WARNING": self.handle_time_warning
+                "TIME_WARNING": self.handle_time_warning,
+                "FINAL_SCORES": self.handle_final_scores
             }
 
             handler = handlers.get(message_type)
@@ -563,15 +630,18 @@ class App(tk.Tk):
         ekran_lobby = self.ekrany['Lobby']
         game_state = data.get("game_status")
         
-        # 1. Sprawdzamy stan LOBBY i uruchamiamy/zatrzymujemy licznik
-        
         if game_state == "IN_ROUND" or game_state == "GAME_OVER":
             # Akcja: Zawsze zatrzymujemy licznik, jeśli gra wystartowała lub się skończyła
+            ekran_lobby.is_joined = False
             ekran_lobby.stop_countdown() 
             ekran_lobby.cancel_idle_timer()
             ekran_lobby.is_countdown_active = False
             
         elif game_state == "LOBBY":
+            if not getattr(ekran_lobby, "is_joined", False):
+                ekran_lobby.send_lobby_choice("WANT_TO_PLAY")
+                ekran_lobby.is_joined = True
+            ekran_lobby.player_message_label.config(text="")
             waiting_status = data.get("waiting_status") 
             time_remaining = data.get("time_remaining")
             
@@ -656,6 +726,11 @@ class App(tk.Tk):
         time_left = data.get("time_left", 15)
         if 'Game_window' in self.ekrany:
             self.ekrany['Game_window'].activate_time_warning(time_left)
+
+    def handle_final_scores(self, data):
+        print("[GUI] Otrzymano wyniki końcowe. Przełączam na Result_window.")
+        self.pokaz_ekran(Result_window)
+        self.ekrany['Result_window'].show_results(data)
 
 if __name__ == "__main__":
     app = App()

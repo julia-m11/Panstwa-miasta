@@ -70,5 +70,35 @@ dwa przyciski :
         {'type': 'ROUND_END_ANSWERS', 'answers': {'państwo': 'lalala', 'miasto': 'dd', 'roślina': 'dd', 'zwierzę': 'dd', 'rzecz': 'dd'}, 'is_first': True}
         gdy wartosc is_first = true -> serwer wysyla pozostalym graczom wiadomosc:
             "type": "TIME_WARNING",
-            "time_left": 15 //to oznacza ze reszta ma 15s na odpowiedz
+            "time_left": 10 //to oznacza ze reszta ma 10s na odpowiedz
     opcja b) z flaga is_first = false - raczej nie bedzie wymagac zadnej odpowiedzi
+
+6. Gdy gracz dostanie odpowiedz od serwera na request_game_info ze {
+    "type": "GAME_STATUS",
+    "game_status": "IN_ROUND",                 
+    "current_round": np 1}
+ ma dwa przciski do wyboru, ktore wysylaja albo:
+    - WANT_TO_PLAY_IN_NEXT_ROUND, wtedy serwer gdy zaczyna sie druga runda musi wyslac do tego gracza wiadomosc ROUND_START z odpowiednim numerem current_round
+    - WANT_TO_QUEUE, 
+7. Kiedy wszyscy gracze wysla odpowiedzi w piatej rundzie serwer wysyla wszystkim graczom wiadomosc, wtedy widza okno wynikow
+
+    {
+    "type": "FINAL_SCORES",
+    "your_place": 1, //dla konkretnego gracza
+    "total_points": 150, //dla konkretnego gracza
+    "top_3": [
+        {"nick": "Ania", "points": 150}, //to sa slowniki 
+        {"nick": "Tomek", "points": 120},
+        {"nick": "Gracz3", "points": 90}
+    ]
+    }
+
+    w oknie wynikow jest odliczanie 20 sekund (wyniki sa wyswietlane przez 20 sekund )po ktorych jest przeniesienie do okna lobby i zadanie request_game_info.\
+    W czasie gdy wyswietlane sa wyniki czyli od wiadomosci final_scores przez te 20 sekund stan gry to game_over i gdy ktos dolaczy w tym czasie powinien dostac
+    wiadomosc {
+        "type": "GAME_STATUS",
+        "game_status": "GAME_OVER",                                
+        }
+
+        tutaj ogolnie nie jestem przekonana jak to rozwiazac bo mysle ze czas moze sie rozjezdzac ogolnie po tych 20 sekundach powinna powstac nowa gra tak aby ktos
+        kto pozostal w grze (po tych 20 sekundach) dostal stan gry lobby 
