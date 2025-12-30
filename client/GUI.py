@@ -1,12 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
-import server_comm
+import network_manager
 import json
 import threading
 from queue import Queue
 from tkinter import messagebox
 import socket
-from client import ReceiverThread
+from receiver_thread import ReceiverThread
 
 # ----------------------poszczegolne okna--------------------------------------
 
@@ -19,26 +19,26 @@ class Log_in_window(tk.Frame):
 
         # ----------------------elementy okna-----------------
 
-        title = tk.Label(self, text="MENU GŁÓWNE GRY", font=("Arial", 24))
+        title = tk.Label(self, text="MENU GŁÓWNE GRY", font=("Arial", 24, "bold"), bg = "lightblue")
         title.pack(pady=50)
 
         #---------------pole na nick---------------------------
 
-        etykieta_nick = ttk.Label(self, text="Wprowadź swój nick:")
+        etykieta_nick = ttk.Label(self, text="Wprowadź swój nick:", font=("Arial", 10))
         etykieta_nick.pack(pady=(10, 10)) 
         self.pole_nick = ttk.Entry(self, width=25)
         self.pole_nick.pack(padx=20, pady=5)
 
         #---------------pole na ip serwera--------------
 
-        etykieta_ip = ttk.Label(self, text="Wprowadź adres ip serwera:")
+        etykieta_ip = ttk.Label(self, text="Wprowadź adres ip serwera:", font=("Arial", 10))
         etykieta_ip.pack(pady=(10, 10)) 
         self.pole_ip = ttk.Entry(self, width=25)
         self.pole_ip.pack(padx=20, pady=5)
 
         #---------------pole na port------------------
 
-        etykieta_port = ttk.Label(self, text="Wprowadź port:")
+        etykieta_port = ttk.Label(self, text="Wprowadź port:", font=("Arial", 10))
         etykieta_port.pack(pady=(10, 10)) 
         self.pole_port = ttk.Entry(self, width=25)
         self.pole_port.pack(padx=20, pady=5)
@@ -72,7 +72,7 @@ class Log_in_window(tk.Frame):
             return 
         
         try:
-            socket.inet_aton(ip_serwera) # czy to sprawdzi ze ip ma zly format czy potzrebny regex
+            socket.inet_aton(ip_serwera) 
         except socket.error:
             messagebox.showerror(
                 "Błąd IP", 
@@ -85,7 +85,7 @@ class Log_in_window(tk.Frame):
         
         print(f"Próba połączenia z {ip_serwera}:{port_int} jako {nick}...")
 
-        threading.Thread(
+        threading.Thread( # aby okno gry nie zamarlo czekajac
             target=self.initiate_connection_and_login, 
             args=(nick, ip_serwera, port_int), 
             daemon=True
@@ -103,33 +103,29 @@ class Log_in_window(tk.Frame):
                 "type": "connecting_with_server",
                 "nick": nick
             }
-            server_comm.send_json(sock, dane_do_wyslania) # Wysyłka z tego wątku
+            network_manager.send_json(sock, dane_do_wyslania) # wysyłka z tego wątku
             
             # ODBIERAMY BLOKUJĄCO
             try:
-                # Czekamy na pierwszą, pełną wiadomość (np. nick_accepted)
-                pierwsza_odpowiedz_json = server_comm.receive_first_message_blocking(sock)
+                first_json_response = network_manager.receive_first_message_blocking(sock)
                 
-                if pierwsza_odpowiedz_json:
+                if first_json_response:
                     
-                    self.kontroler.network_queue.put(pierwsza_odpowiedz_json)
-                    
-                    data = json.loads(pierwsza_odpowiedz_json)
+                    self.kontroler.network_queue.put(first_json_response)
+                    data = json.loads(first_json_response)
                     if data.get("type") == "nick_accepted":
                         self.kontroler.start_receiving_data() 
                     
-                else:
-                    # Brak odpowiedzi lub rozłączenie
+                else: # brak odpowiedzi lub rozłączenie
                     blad = json.dumps({"type": "network_error", "reason": "Serwer rozłączył się po wysłaniu nicku."})
                     self.kontroler.network_queue.put(blad)
                     
             except Exception as e:
-                print(f"Błąd przy odbieraniu pierwszej odpowiedzi: {e}")
+                print(f"BŁĄD - initiate_connection_and_login : Błąd przy odbieraniu pierwszej odpowiedzi: {e}")
                 blad = json.dumps({"type": "network_error", "reason": f"Błąd komunikacji: {e}"})
                 self.kontroler.network_queue.put(blad)
         else:
-            print("Połączenie nieudane initiate_connection_and_login")
-            # Błąd jest już wstawiony do kolejki przez nawiaz_polaczenie_z_s
+            print("BŁĄD - initiate_connection_and_login : Połączenie nieudane")
 
 ##--------------------------------okno lobby--------------------------------------------
 
@@ -492,15 +488,15 @@ class App(tk.Tk):
 
         self.pokaz_ekran(Log_in_window)
 
-    def start_receiving_data(self):
+    def start_receiving_data(self): # tworzy watek odbiorczy
         if self.socket_polaczenia and not self.receiver_thread:
-            self.receiver_thread = ReceiverThread(  # wątek odbiorczy
+            self.receiver_thread = ReceiverThread( 
                 sock=self.socket_polaczenia,
                 queue=self.network_queue,
                 controller=self
             )
-            self.receiver_thread.start() #Startujemy ciągły odbiór
-            print("Ciągły wątek odbiorczy wystartował.")
+            self.receiver_thread.start() # startujemy ciągły odbiór
+            print("start_receiving_data : wątek odbiorczy wystartował")
 
         
     def pokaz_ekran(self, klasa_ekranu):
@@ -526,7 +522,7 @@ class App(tk.Tk):
         if self.socket_polaczenia:
             # wysłanie w osobnym wątku
             threading.Thread(
-                target=server_comm.send_json, 
+                target=network_manager.send_json, 
                 args=(self.socket_polaczenia, dane),
                 daemon=True
             ).start()
@@ -535,11 +531,11 @@ class App(tk.Tk):
         
     def nawiaz_polaczenie_z_serwerem(self, host, port):
 
-        socket_polaczenia = server_comm.connect_to_server(host, port)
+        socket_polaczenia = network_manager.connect_to_server(host, port)
         
         if socket_polaczenia:
             self.socket_polaczenia = socket_polaczenia
-            print("POŁĄCZENIE: Pomyślnie połączono z serwerem.")
+            print("nawiaz_polaczenie_z_serwerem : Pomyślnie połączono z serwerem.")
             
         else:
             blad = json.dumps({"type": "network_error", "reason": "Brak połączenia."})
@@ -611,7 +607,7 @@ class App(tk.Tk):
             print("Nie można odblokować przycisku, ekran logowania niedostępny.")
 
 
-    def handle_network_error(self, data):
+    def handle_network_error(self, data): # poprawic ta funkcje !
 
         reason = data.get("reason", "Nieznany błąd sieci.")
         

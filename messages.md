@@ -1,22 +1,23 @@
 
-Okno dolaczenia do serwera
+# Okno dolaczenia do serwera
 
 - {"type":"connecting_with_server","nick":"Alicja"} - klient -> serwer - proba polaczenia z serwerem
 - {"type": "nick_accepted", "session_id": 12345} - serwer -> klient - udalo sie uzyskac polaczenie
 - {"type": "nick_rejected", "reason": "Ten nick jest zajęty"} - serwer -> klient - gdy nick jest juz zajety
 
-- {"type": "network_error", "reason": "Brak połączenia."} - jesli nie udało się połaczyc z serwerem, to jest 
-  obsluzone w kliencie kiedy nie uda sie nawiazac polaczenia, wiec nie musisz tego obslugiwac, ale wolalam wypisac zeby sie nie pogubic
-- {"type": "didnt_send", "reason": "Nie udało się wysłać wiadomości."} - jest polaczenie z serwerem, ale nie udalo sie wyslac, to samo co poprzednie
-    nie musisz tego obslugiwac
+- {"type": "network_error", "reason": "Serwer rozłączył się."} - zwrocone z network_manager, wyslane z receiver_thread 
+- {"type": "network_error", "reason": f"Błąd odbioru: {e}"} - wyslane z receiver_thread
+- {"type": "network_error", "reason": "Serwer rozłączył się po wysłaniu nicku."} - wysylane z gui.initiate_connection_and_login
+- {"type": "network_error", "reason": f"Błąd komunikacji: {e}"} - wysylane z gui.initiate_connection_and_login
+- {"type": "network_error", "reason": "Brak połączenia."} - wysylane z gui.nawiaz_polaczenie_z_serwerem
 
 
 Wszystkie wiadomości wysyłane przez serwer i klienta muszą kończyć się znakiem nowej linii (\n) np. {"type": "nazwa_komunikatu", "pole1": "wartosc"} + \n
 aby oddzielic pojedyncza wiadomosc
 
-1. nick jest zaakceptownay
-2.wysylam do serwera {"type": "REQUEST_GAME_INFO"} 
-3 odpowiedz od serwera to ,...
+# 1. nick jest zaakceptownay
+# 2.wysylam do serwera {"type": "REQUEST_GAME_INFO"} 
+# 3 odpowiedz od serwera to :
 "IN_ROUND" - gra trwa rozpoczala sie runda
 {
     "type": "GAME_STATUS",
@@ -36,7 +37,7 @@ na pewno serwer musi komunikowac ze skonczylo sie odliczanie
     "type": "GAME_STATUS",
     "game_status": "GAME_OVER",                                
 }
-4. w zaleznosci od stanu pokazuje sie konkretne okno 
+# 4. w zaleznosci od stanu pokazuje sie konkretne okno 
 - in round
 dwa przyciski :
     1. dolacz do nastepnej rundy - klient -> serwer {"type": "WANT_TO_PLAY_IN_NEXT_ROUND"}
@@ -60,27 +61,28 @@ dwa przyciski :
     - game GAME_OVER
     po wyswietleniu wynikow przechodzi do okna lobby
 
-5. Odnoscie okna gry, kiedy jest min dwoch graczy i skonczy sie oczekiwanie na reszte serwer wysyla wiadomosc
+# 5. Odnoscie okna gry, kiedy jest min dwoch graczy i skonczy sie oczekiwanie na reszte serwer wysyla wiadomosc
     "type": "ROUND_START",
     "current_round": 1,
     "letter": "B",
     "current_points": 0, //serwer musi w tym miejscu odsylac ile dany gracz ma punktow sumarycznie
     "players_count": 2 
-    opcja a) gdy gracz wpisze odpowiedzi i jest pierwsza osoba ktora konczy do serwera wysylana jest wiadomosc:
+
+- opcja a) gdy gracz wpisze odpowiedzi i jest pierwsza osoba ktora konczy do serwera wysylana jest wiadomosc:
         {'type': 'ROUND_END_ANSWERS', 'answers': {'państwo': 'lalala', 'miasto': 'dd', 'roślina': 'dd', 'zwierzę': 'dd', 'rzecz': 'dd'}, 'is_first': True}
         gdy wartosc is_first = true -> serwer wysyla pozostalym graczom wiadomosc:
             "type": "TIME_WARNING",
-            "time_left": 10 //to oznacza ze reszta ma 10s na odpowiedz
-    opcja b) z flaga is_first = false - raczej nie bedzie wymagac zadnej odpowiedzi
+            "time_left": 10 //to oznacza ze reszta ma 10s na odpowiedz 
+- opcja b) z flaga is_first = false - raczej nie bedzie wymagac zadnej odpowiedzi
 
-6. Gdy gracz dostanie odpowiedz od serwera na request_game_info ze {
+# 6. Gdy gracz dostanie odpowiedz od serwera na request_game_info ze {
     "type": "GAME_STATUS",
     "game_status": "IN_ROUND",                 
     "current_round": np 1}
  ma dwa przciski do wyboru, ktore wysylaja albo:
-    - WANT_TO_PLAY_IN_NEXT_ROUND, wtedy serwer gdy zaczyna sie druga runda musi wyslac do tego gracza wiadomosc ROUND_START z odpowiednim numerem current_round
-    - WANT_TO_QUEUE, 
-7. Kiedy wszyscy gracze wysla odpowiedzi w piatej rundzie serwer wysyla wszystkim graczom wiadomosc, wtedy widza okno wynikow
+- WANT_TO_PLAY_IN_NEXT_ROUND, wtedy serwer gdy zaczyna sie druga runda musi wyslac do tego gracza wiadomosc ROUND_START z odpowiednim numerem current_round
+- WANT_TO_QUEUE, 
+# 7. Kiedy wszyscy gracze wysla odpowiedzi w piatej rundzie serwer wysyla wszystkim graczom wiadomosc, wtedy widza okno wynikow
 
     {
     "type": "FINAL_SCORES",
