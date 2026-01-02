@@ -16,7 +16,8 @@ def connect_to_server(ip, port):
     
 def send_json(sock, data): # wysyła słownik jako JSON zakończony \n
     try:
-        json_message = json.dumps(data)
+        #json_message = json.dumps(data)
+        json_message = json.dumps(data, separators=(',', ':'))
         message = json_message + '\n' # zeby wiedziec gdzie koniec wiadomosci
         sock.sendall(message.encode('utf-8'))
         return True

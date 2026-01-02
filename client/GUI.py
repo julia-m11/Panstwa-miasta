@@ -100,9 +100,7 @@ class Log_in_window(tk.Frame):
             sock = self.kontroler.socket_polaczenia
             
             dane_do_wyslania = {
-                "type": "connecting_with_server",
-                "nick": nick
-            }
+                "type": "connecting_with_server", "nick": nick}
             network_manager.send_json(sock, dane_do_wyslania) # wysyłka z tego wątku
             
             # ODBIERAMY BLOKUJĄCO
@@ -127,7 +125,7 @@ class Log_in_window(tk.Frame):
         else:
             print("BŁĄD - initiate_connection_and_login : Połączenie nieudane")
 
-##--------------------------------okno lobby--------------------------------------------
+# -------------------------------okno lobby--------------------------------------------
 
 class Lobby(tk.Frame):
     
@@ -468,6 +466,7 @@ class App(tk.Tk):
         self.network_queue = Queue() 
         self.socket_polaczenia = None 
         self.sprawdz_kolejke_sieciowa() 
+        self.current_round_active = None
         
         #-----------------Gui-------------------
         
@@ -613,8 +612,9 @@ class App(tk.Tk):
         
         messagebox.showerror(
             "Błąd Połączenia", 
-            f"Nie udało się nawiązać połączenia z serwerem."
+            f"Brak połączenia z serwerem."
         )
+        self.on_closing()
         
         try: 
             self.ekrany['Log_in_window'].connect_button.config(state='normal')
@@ -668,6 +668,8 @@ class App(tk.Tk):
                 ekran_lobby.game_status_label.config(
                     text="POCZEKALNIA: Czekamy na minimum 2 graczy,\n aby rozpocząć grę."
                 )
+                if not ekran_lobby.idle_timeout_id:
+                    ekran_lobby.start_idle_timer()
                 
         if game_state == "IN_ROUND":
             current_round = data.get("current_round", 0)
@@ -697,8 +699,8 @@ class App(tk.Tk):
                 text="Rozgrywka zakończona. Trwa wypisywanie wyników, za chwilę zostaniesz \nprzekierowany do poczekalni."
             )
 
+
     def handle_round_start(self, data):
-        """Przełącza GUI na tryb gry i uzupełnia dane rundy."""
         players_count = data.get("players_count", 0)
 
         # sprawdzenie liczby graczy przy starcie
@@ -713,6 +715,11 @@ class App(tk.Tk):
         round_num = data.get("current_round")
         letter = data.get("letter")
         points = data.get("current_points", 0)
+        
+        if self.current_round_active == round_num: # aby okno sie czaly czas nie otwieralo
+            return 
+        self.current_round_active = round_num
+
         self.pokaz_ekran(Game_window)
         self.ekrany['Game_window'].start_round_gui(round_num, letter, points)
         
