@@ -467,6 +467,7 @@ class App(tk.Tk):
         self.socket_polaczenia = None 
         self.sprawdz_kolejke_sieciowa() 
         self.current_round_active = None
+        self.round_start_received = False
         
         #-----------------Gui-------------------
         
@@ -558,6 +559,7 @@ class App(tk.Tk):
     
         try:
             data = json.loads(odpowiedz_json_string)
+            print(f"dostalam wiadomosc - {data}")
             message_type = data.get("type")
             
             handlers = {
@@ -625,6 +627,11 @@ class App(tk.Tk):
     def handle_game_status(self, data):
         ekran_lobby = self.ekrany['Lobby']
         game_state = data.get("game_status")
+
+        if game_state == "IN_ROUND":
+            current_round = data.get("current_round", 0)
+            if not getattr(self, 'round_start_received', False):
+                return
         
         if game_state == "IN_ROUND" or game_state == "GAME_OVER":
             # Akcja: Zawsze zatrzymujemy licznik, jeśli gra wystartowała lub się skończyła
@@ -719,6 +726,7 @@ class App(tk.Tk):
         if self.current_round_active == round_num: # aby okno sie czaly czas nie otwieralo
             return 
         self.current_round_active = round_num
+        self.round_start_received = True
 
         self.pokaz_ekran(Game_window)
         self.ekrany['Game_window'].start_round_gui(round_num, letter, points)
