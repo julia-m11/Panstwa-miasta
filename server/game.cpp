@@ -137,8 +137,6 @@ void Game::scoreRound() {
 
 
 
-
-
 bool Game::shouldSendTimeWarning() {
     if (state != GameState::IN_ROUND)
         return false;
@@ -153,55 +151,60 @@ bool Game::shouldSendTimeWarning() {
 
 bool Game::tick() {
     switch (state) {
-        case GameState::COUNTDOWN:
-            countdown--;
-            if (countdown <= 0) {
-                startRound();
-                return true;
-            }
+
+    case GameState::COUNTDOWN:
+        countdown--;
+        if (countdown <= 0) {
+            startRound();
             return true;
+        }
+        return false;
 
-        case GameState::IN_ROUND:
-            round_time_remaining--;
-            if (round_time_remaining <= 0) {
-                for (auto& p : players) {
-                    auto it = std::find_if(submissions.begin(), submissions.end(),
-                        [&p](const RoundSubmission& s){ return s.player == p; });
+    case GameState::IN_ROUND:
+        round_time_remaining--;
 
-                    if (it == submissions.end()) {
-                        RoundSubmission empty;
-                        empty.player = p;
-                        empty.answers = { {"państwo",""}, {"miasto",""}, {"roślina",""}, {"zwierzę",""}, {"rzecz",""} };
-                        submissions.push_back(empty);
-                    } else {
-                        for (const auto& cat : {"państwo","miasto","roślina","zwierzę","rzecz"}) {
-                            if (it->answers.find(cat) == it->answers.end())
-                                it->answers[cat] = "";
-                        }
-                    }
-                }
-
-                state = GameState::ROUND_SCORING;
-                return true;
-            }
-            return true;
-
-        case GameState::ROUND_SCORING:
-            scoreRound();
-            return true;
-
-        case GameState::GAME_OVER:
-            game_over_timer--;
-            if (game_over_timer <= 0) {
-                resetGame();
-                return true;
-            }
-            return true;
-
-        default:
+        if (round_time_remaining == 10) {
             return false;
+        }
+
+        if (round_time_remaining <= 0) {
+            for (auto& p : players) {
+                auto it = std::find_if(submissions.begin(), submissions.end(),
+                    [&p](const RoundSubmission& s){ return s.player == p; });
+
+                if (it == submissions.end()) {
+                    RoundSubmission empty;
+                    empty.player = p;
+                    empty.answers = {
+                        {"państwo",""}, {"miasto",""},
+                        {"roślina",""}, {"zwierzę",""}, {"rzecz",""}
+                    };
+                    submissions.push_back(empty);
+                }
+            }
+
+            state = GameState::ROUND_SCORING;
+            return true; 
+        }
+        return false;
+
+    case GameState::ROUND_SCORING:
+        scoreRound();
+        return true; 
+
+    case GameState::GAME_OVER:
+        game_over_timer--;
+        if (game_over_timer <= 0) {
+            resetGame();
+            return true; 
+        }
+        return false;
+
+    default:
+        return false;
     }
 }
+
 
 
 
@@ -220,7 +223,6 @@ void Game::resetGame() {
     countdown = 45;
     current_round = 0;
     submissions.clear();
-
     for (auto& p : players) {
         p->resetPoints();
     }
@@ -228,7 +230,7 @@ void Game::resetGame() {
 
 
 
-std::string Game::gameStatusJson(std::shared_ptr<client>) const {
+std::string Game::gameStatusJson(std::shared_ptr<client>) {
     std::ostringstream o;
 
     if (state == GameState::LOBBY) {
@@ -242,10 +244,15 @@ std::string Game::gameStatusJson(std::shared_ptr<client>) const {
         o << R"({"type":"GAME_STATUS","game_status":"IN_ROUND","current_round":)"
           << current_round << "}";
     }
+    else if (state == GameState::GAME_OVER) {
+    o << R"({"type":"GAME_STATUS","game_status":"GAME_OVER"})";
+}
 
     o << "\n";
     return o.str();
 }
+
+
 
 std::string Game::roundStartJson(std::shared_ptr<client> p) const {
     std::ostringstream o;
