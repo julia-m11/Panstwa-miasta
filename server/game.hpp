@@ -49,7 +49,7 @@ public:
     bool tick(); // 
 
     std::string gameStatusJson(std::shared_ptr<client> p) const;
-    std::string roundStartJson(std::shared_ptr<client> p) const;
+    std::string roundStartJson(std::shared_ptr<client> p);
 
     bool shouldStartRound() const;
     bool shouldSendTimeWarning();
