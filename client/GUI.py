@@ -244,7 +244,7 @@ class Lobby(tk.Frame):
         self.btn_join_next_round.grid_forget()
         self.btn_queue.grid_forget()
         
-    def show_buttons(self, mode): #tu zmiana !!!
+    def show_buttons(self, mode, current_round=0): #tu zmiana !!!
         self.hide_buttons() 
         self.buttons_frame.pack_forget()
         
@@ -256,9 +256,14 @@ class Lobby(tk.Frame):
 
         if mode == 'IN_ROUND':
             self.buttons_frame.pack(pady=30)
-            self.btn_join_next_round.grid(row=0, column=0, padx=10)
+
+            if current_round < 5:
+                self.btn_join_next_round.grid(row=0, column=0, padx=10)
+                self.btn_join_next_round.config(state='normal')
+
+            #self.btn_join_next_round.grid(row=0, column=0, padx=10)
             self.btn_queue.grid(row=0, column=1, padx=10)
-            self.btn_join_next_round.config(state='normal')
+            #self.btn_join_next_round.config(state='normal')
             self.btn_queue.config(state='normal')
         
         elif mode == 'LOBBY':
@@ -638,6 +643,7 @@ class App(tk.Tk):
     def handle_game_status(self, data):
         ekran_lobby = self.ekrany['Lobby']
         game_state = data.get("game_status")
+        current_round = data.get("current_round", 0)
 
         #if game_state == "IN_ROUND":
          #   current_round = data.get("current_round", 0)
@@ -693,34 +699,43 @@ class App(tk.Tk):
                 )
                 if not ekran_lobby.idle_timeout_id:
                     ekran_lobby.start_idle_timer()
+
+        ekran_lobby.show_buttons(game_state, current_round)
                 
         if game_state == "IN_ROUND":
-            current_round = data.get("current_round", 0)
+            #current_round = data.get("current_round", 0)
             ekran_lobby.game_status_label.config(
                 text=f"GRA TRWA: Rozpoczęła się Runda {current_round}/5."
             )
-            ekran_lobby.player_message_label.config(
-                text="Możesz dołączyć do następnej rundy lub czekać na nową grę."
-            )
+            if current_round >= 5:
+                ekran_lobby.player_message_label.config(
+                    text="Trwa ostatnia runda. Musisz poczekać na nową grę.")
+            else:
+                ekran_lobby.player_message_label.config(
+                    text="Możesz dołączyć do następnej rundy lub czekać na nową grę."
+                )
         elif game_state == "GAME_OVER":
             ekran_lobby.game_status_label.config(
                 text="ROZGRYWKA ZAKOŃCZONA"
             )
-        
-        ekran_lobby.show_buttons(game_state) 
-
-        if game_state == "IN_ROUND":
             ekran_lobby.player_message_label.config(
-                text="Gra trwa. Możesz dołączyć do następnej rundy lub czekać na nową grę."
+                text="Rozgrywka zakończona. Trwa wypisywanie wyników, za chwilę zostaniesz \nprzekierowany do poczekalni."
             )
+        
+        #ekran_lobby.show_buttons(game_state) 
+
+        #if game_state == "IN_ROUND":
+         #   ekran_lobby.player_message_label.config(
+        #        text="Gra trwa. Możesz dołączyć do następnej rundy lub czekać na nową grę."
+        #    )
         #elif game_state == "LOBBY":
            # ekran_lobby.player_message_label.config(
              #   text="Kliknij 'Dołącz do Nowej Gry', aby zgłosić gotowość."
            # )
-        elif game_state == "GAME_OVER":
-            ekran_lobby.player_message_label.config(
-                text="Rozgrywka zakończona. Trwa wypisywanie wyników, za chwilę zostaniesz \nprzekierowany do poczekalni."
-            )
+        #if game_state == "GAME_OVER":
+         #   ekran_lobby.player_message_label.config(
+         #       text="Rozgrywka zakończona. Trwa wypisywanie wyników, za chwilę zostaniesz \nprzekierowany do poczekalni."
+         #   )
 
 
     def handle_round_start(self, data):
