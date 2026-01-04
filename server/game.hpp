@@ -24,9 +24,13 @@ private:
     int round_time_remaining;
     bool round_started;
     bool time_warning_sent;
+    int game_over_timer;
+    bool round_start_pending;
+
 
     std::vector<std::shared_ptr<client>> players;
-
+    std::vector<std::shared_ptr<client>> next_round_players;
+    std::vector<std::shared_ptr<client>> queued_players; 
 
     struct RoundSubmission {
     std::shared_ptr<client> player;
@@ -34,6 +38,9 @@ private:
     };
 
     std::vector<RoundSubmission> submissions;
+
+
+
 
 public:
     Game();
@@ -51,11 +58,16 @@ public:
     std::string gameStatusJson(std::shared_ptr<client> p) const;
     std::string roundStartJson(std::shared_ptr<client> p);
 
-    bool shouldStartRound() const;
+    bool shouldStartRound();
     bool shouldSendTimeWarning();
     void submitAnswers(std::shared_ptr<client> player, const std::string& json_msg);
     void scoreRound();
-    int game_over_timer;
+    void addToNextRound(std::shared_ptr<client> p);
+    void addToQueue(std::shared_ptr<client> p);
+    const std::vector<std::shared_ptr<client>>& getPlayers() const {
+        return players;
+    }
+
 
 
 

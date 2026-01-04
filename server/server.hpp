@@ -29,9 +29,8 @@ private:
 
     void handle_message(std::shared_ptr<client> client, const std::string& msg);
 
-    // logika nicków
     void handle_connecting(std::shared_ptr<client> client, const std::string& nick);
-    // wysyłka
+
     void send_json(int fd, const std::string& json);
     void broadcast_game_status();
     void broadcast_round_start_if_needed();

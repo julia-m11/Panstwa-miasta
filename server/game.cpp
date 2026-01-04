@@ -8,6 +8,8 @@
 
 /*
 {"type":"connecting_with_server","nick":"Tester1"}
+{"type":"WANT_TO_PLAY_IN_NEXT_ROUND"}
+{"type":"WANT_TO_QUEUE"}
 {"type":"ROUND_END_ANSWERS","answers":{"państwo":"Polska","miasto":"Poznan","roślina":"Piwonia","zwierzę":"Papuga","rzecz":"Piłka"}}
 {"type":"ROUND_END_ANSWERS","answers":{"państwo":"Polska","miasto":"Poznan","roślina":"","zwierzę":"Papuga","rzecz":"Piłka"}}
 */
@@ -20,13 +22,24 @@ Game::Game()
       current_letter('A'),
       game_over_timer(0),  
       round_time_remaining(0),
-      time_warning_sent(false)
+      time_warning_sent(false),
+      round_start_pending(false)
 {
     std::srand(std::time(nullptr));
 }
 
 
+
 void Game::addPlayer(std::shared_ptr<client> p) {
+    auto it = std::find(players.begin(), players.end(), p);
+    if (it != players.end()) {
+        return;
+    }
+    if (state == GameState::IN_ROUND || state == GameState::ROUND_SCORING) {
+        queued_players.push_back(p);
+        return;
+    }
+
     players.push_back(p);
 
     if (players.size() >= 2 && state == GameState::LOBBY) {
@@ -34,6 +47,8 @@ void Game::addPlayer(std::shared_ptr<client> p) {
         countdown = 45;
     }
 }
+
+
 
 void Game::removePlayer(int socket) {
     players.erase(
@@ -50,8 +65,12 @@ void Game::removePlayer(int socket) {
     }
 }
 
-bool Game::shouldStartRound() const {
-    return state == GameState::IN_ROUND;
+bool Game::shouldStartRound() {
+    if (round_start_pending) {
+        round_start_pending = false;
+        return true;
+    }
+    return false;
 }
 
 void Game::submitAnswers(std::shared_ptr<client> player, const std::string& msg) {
@@ -208,29 +227,57 @@ bool Game::tick() {
 
 
 
-
 void Game::startRound() {
+    for (auto& p : next_round_players) {
+        if (std::find(players.begin(), players.end(), p) == players.end()) {
+            players.push_back(p);
+        }
+        p->join_intent = JoinIntent::NONE;
+    }
+    next_round_players.clear();
+
     state = GameState::IN_ROUND;
     current_round++;
-    current_letter = 'A'+(std::rand() % 26);
+    current_letter = 'A' + (std::rand() % 26);
     round_time_remaining = 180;
     time_warning_sent = false;
     submissions.clear();
+    round_start_pending = true;
 }
 
+
+
 void Game::resetGame() {
+    players.clear();
+
+    for (auto& p : queued_players) {
+        p->resetPoints();
+        players.push_back(p);
+        p->join_intent = JoinIntent::NONE;
+}
+    queued_players.clear();
+
     state = GameState::LOBBY;
     countdown = 45;
     current_round = 0;
-    submissions.clear();
-    for (auto& p : players) {
-        p->resetPoints();
+}
+
+void Game::addToNextRound(std::shared_ptr<client> p) {
+    if (std::find(next_round_players.begin(), next_round_players.end(), p)
+        == next_round_players.end()) {
+        next_round_players.push_back(p);
+    }
+}
+
+void Game::addToQueue(std::shared_ptr<client> p) {
+    if (std::find(queued_players.begin(), queued_players.end(), p)
+        == queued_players.end()) {
+        queued_players.push_back(p);
     }
 }
 
 
-
-std::string Game::gameStatusJson(std::shared_ptr<client>) {
+std::string Game::gameStatusJson(std::shared_ptr<client>) const {
     std::ostringstream o;
 
     if (state == GameState::LOBBY) {
@@ -254,7 +301,7 @@ std::string Game::gameStatusJson(std::shared_ptr<client>) {
 
 
 
-std::string Game::roundStartJson(std::shared_ptr<client> p) const {
+std::string Game::roundStartJson(std::shared_ptr<client> p) {
     std::ostringstream o;
     o << R"({"type":"ROUND_START","current_round":)"
       << current_round

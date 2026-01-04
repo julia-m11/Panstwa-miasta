@@ -2,15 +2,23 @@
 #include <string>
 #include <sys/socket.h>
 
+enum class JoinIntent {
+    NONE,
+    NEXT_ROUND,
+    NEXT_GAME
+};
+
 class client {
 private:
     std::string nick;
     int sockDes;
     int points;
     int session_id;
+    
 
 public:
     bool nick_accepted;
+    JoinIntent join_intent = JoinIntent::NONE;
 
     explicit client(int sock)
         : nick(""),
@@ -54,4 +62,6 @@ public:
 
         return send(sockDes, m.c_str(), m.size(), 0);
     }
+
+
 };

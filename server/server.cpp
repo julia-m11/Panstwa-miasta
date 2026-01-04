@@ -40,14 +40,15 @@ void Server::setup_socket(int port) {
 }
 
 void Server::broadcast_round_start_if_needed() {
-    if (game.shouldStartRound()) {
-        for (auto& [fd, c] : clients) {
-            if (c->nick_accepted) {
-                c->sendMessage(game.roundStartJson(c));
-            }
-        }
+    if (!game.shouldStartRound())
+        return;
+
+    for (auto& p : game.getPlayers()) {
+        p->sendMessage(game.roundStartJson(p));
     }
 }
+
+
 
 
 void Server::run() {
@@ -65,10 +66,15 @@ void Server::run() {
         }
 
         bool state_changed = game.tick();
-        if (state_changed) {
+
+    if (state_changed) {
+        if (game.getState() != GameState::IN_ROUND) {
             broadcast_game_status();
-            broadcast_round_start_if_needed();
         }
+
+        broadcast_round_start_if_needed();
+    }
+
         if (game.shouldSendTimeWarning()) {
         for (auto& [fd, c] : clients) {
             c->sendMessage(R"({"type":"TIME_WARNING","time_left":10})");
@@ -123,7 +129,7 @@ void Server::disconnect_client(int fd) {
     clients.erase(fd);
 }
 
-void Server::handle_message(std::shared_ptr<client> client, const std::string& msg){
+void Server::handle_message(std::shared_ptr<client> client, const std::string& msg) {
     if (msg.find("connecting_with_server") != std::string::npos) {
         auto pos = msg.find("\"nick\":\"");
         if (pos == std::string::npos) return;
@@ -135,20 +141,29 @@ void Server::handle_message(std::shared_ptr<client> client, const std::string& m
     }
     else if (msg.find("REQUEST_GAME_INFO") != std::string::npos) {
         client->sendMessage(game.gameStatusJson(client));
-        }
-        else if (msg.find("ROUND_END_ANSWERS") != std::string::npos) {
+    }
+    else if (msg.find("ROUND_END_ANSWERS") != std::string::npos) {
         game.submitAnswers(client, msg);
-        }
+    }
+    else if (msg.find("\"type\":\"WANT_TO_PLAY_IN_NEXT_ROUND\"") != std::string::npos) {
+        client->join_intent = JoinIntent::NEXT_ROUND;
+        game.addToNextRound(client);
+    }
+
+    else if (msg.find("\"type\":\"WANT_TO_QUEUE\"") != std::string::npos) {
+        client->join_intent = JoinIntent::NEXT_GAME;
+        game.addToQueue(client);
+    }
 
 
 }
 
-void Server::handle_connecting(std::shared_ptr<client> c, const std::string& nick) {
 
+
+
+void Server::handle_connecting(std::shared_ptr<client> c, const std::string& nick) {
     if (nicks.count(nick)) {
-        c->sendMessage(
-            "{\"type\":\"nick_rejected\",\"reason\":\"Ten nick jest zajęty\"}"
-        );
+        c->sendMessage(R"({"type":"nick_rejected","reason":"Ten nick jest zajęty"})");
         return;
     }
 
@@ -156,16 +171,17 @@ void Server::handle_connecting(std::shared_ptr<client> c, const std::string& nic
     c->nick_accepted = true;
     nicks[nick] = c;
 
-    c->sendMessage(
-        "{\"type\":\"nick_accepted\",\"session_id\":1}"
-    );
+    c->sendMessage(R"({"type":"nick_accepted","session_id":)" 
+                   + std::to_string(c->getSessionId()) + "}");
+
 
     game.addPlayer(c);
-
     broadcast_game_status();
 
     std::cout << "Nick accepted: " << nick << std::endl;
 }
+
+
 
 
 void Server::broadcast_game_status() {
