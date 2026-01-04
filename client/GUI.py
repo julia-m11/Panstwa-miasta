@@ -393,7 +393,7 @@ class Game_window(tk.Frame):
             self.auto_send_timer_id = self.after(1000, self.update_warning_timer)
         else:
             self.warning_label.config(text="CZAS MINĄŁ!")
-            self.send_answers(is_first=False) #automatyczne wysylanie
+            self.send_answers(triggered_by_user=False) #automatyczne wysylanie
 
 # ------------------------------okno wynikow---------------------------------------------
 
@@ -527,7 +527,7 @@ class App(tk.Tk):
 
 
     def wyslij_wiadomosc_do_serwera(self, dane):
-      
+        print(f"Wysylam wiadomosc - {dane}")
         if self.socket_polaczenia:
             # wysłanie w osobnym wątku
             threading.Thread(
