@@ -65,9 +65,18 @@ void Server::run() {
             }
         }
 
+        GameState prev = game.getState();
         bool state_changed = game.tick();
+        GameState now = game.getState();
 
-        /* NAJPIERW time warning */
+        if (prev != GameState::GAME_OVER && now == GameState::GAME_OVER) {
+        for (auto& [fd, c] : clients) {
+            if (c->nick_accepted) {
+                c->sendMessage(game.finalScoresJson(c));
+            }
+        }
+    }
+
         if (game.shouldSendTimeWarning()) {
             for (auto& [fd, c] : clients) {
                 if (c->nick_accepted) {
@@ -78,7 +87,6 @@ void Server::run() {
             }
         }
 
-        /* POTEM inne komunikaty */
         if (state_changed) {
             if (game.getState() != GameState::IN_ROUND) {
                 broadcast_game_status();

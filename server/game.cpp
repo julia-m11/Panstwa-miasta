@@ -152,6 +152,7 @@ void Game::scoreRound() {
     if (current_round >= 5) {
         state = GameState::GAME_OVER;
         game_over_timer = 20;
+        return;
     } else {
         state = GameState::COUNTDOWN;
         countdown = 15;
@@ -258,23 +259,24 @@ void Game::startRound() {
 
 
 void Game::resetGame() {
-    players.clear();
     for (auto& p : players) {
         p->resetPoints();
+        p->join_intent = JoinIntent::NONE;
     }
 
-
-    for (auto& p : queued_players) {
-        p->resetPoints();
-        players.push_back(p);
-        p->join_intent = JoinIntent::NONE;
-}
     queued_players.clear();
+    next_round_players.clear();
 
-    state = GameState::LOBBY;
-    countdown = 45;
     current_round = 0;
+    countdown = 45;
+
+    if (players.size() >= 2) {
+        state = GameState::COUNTDOWN;
+    } else {
+        state = GameState::LOBBY;
+    }
 }
+
 
 void Game::addToNextRound(std::shared_ptr<client> p) {
     if (std::find(next_round_players.begin(), next_round_players.end(), p)
