@@ -652,6 +652,11 @@ class App(tk.Tk):
             ekran_lobby.is_countdown_active = False
             
         elif game_state == "LOBBY":
+
+            if self.current_round_active is not None: # potencjalnie do zmiany
+                self.current_round_active = None  #
+                self.pokaz_ekran(Lobby) #
+
             if not getattr(ekran_lobby, "is_joined", False):
                 ekran_lobby.send_lobby_choice("WANT_TO_PLAY")
                 ekran_lobby.is_joined = True
