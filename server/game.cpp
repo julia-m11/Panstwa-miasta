@@ -24,7 +24,8 @@ Game::Game()
       round_time_remaining(0),
       time_warning_sent(false),
       round_start_pending(false),
-      forced_round_end(false)
+      forced_round_end(false),
+      scoring_pending(false)
 
 {
     std::srand(std::time(nullptr));
@@ -118,7 +119,9 @@ void Game::submitAnswers(std::shared_ptr<client> player, const std::string& msg)
 
     if (submissions.size() == players.size()) {
         state = GameState::ROUND_SCORING;
+        scoring_pending = true;
     }
+
 }
 
 
@@ -221,8 +224,13 @@ case GameState::IN_ROUND:
     
 
     case GameState::ROUND_SCORING:
+        if (scoring_pending) {
+            scoring_pending = false;
+            return true;   // tylko zmiana stanu, NIC WIĘCEJ
+        }
         scoreRound();
         return true;
+
 
     case GameState::GAME_OVER:
         game_over_timer--;
