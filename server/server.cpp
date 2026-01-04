@@ -67,29 +67,24 @@ void Server::run() {
 
         bool state_changed = game.tick();
 
-    if (state_changed) {
-        if (game.getState() != GameState::IN_ROUND) {
-            broadcast_game_status();
-        }
-
-        broadcast_round_start_if_needed();
-    }
-    if (state_changed && game.getState() == GameState::GAME_OVER) {
-        for (auto& [fd, c] : clients) {
-            if (c->nick_accepted) {
-                c->sendMessage(game.finalScoresJson(c));
+        /* NAJPIERW time warning */
+        if (game.shouldSendTimeWarning()) {
+            for (auto& [fd, c] : clients) {
+                if (c->nick_accepted) {
+                    c->sendMessage(
+                        R"({"type":"TIME_WARNING","time_remaining":15})"
+                    );
+                }
             }
         }
-    }
 
-
-    if (game.shouldSendTimeWarning()) {
-        for (auto& [fd, c] : clients) {
-            if (c->nick_accepted) {
-                c->sendMessage(R"({"type":"TIME_WARNING","time_left":10})");
+        /* POTEM inne komunikaty */
+        if (state_changed) {
+            if (game.getState() != GameState::IN_ROUND) {
+                broadcast_game_status();
             }
+            broadcast_round_start_if_needed();
         }
-    }
 
     }
 }
@@ -154,7 +149,18 @@ void Server::handle_message(std::shared_ptr<client> client, const std::string& m
     }
     else if (msg.find("ROUND_END_ANSWERS") != std::string::npos) {
         game.submitAnswers(client, msg);
+        
+        if (game.shouldSendTimeWarning()) {
+            for (auto& [fd, c] : clients) {
+                if (c->nick_accepted) {
+                    c->sendMessage(
+                        R"({"type":"TIME_WARNING","time_remaining":15})"
+                    );
+                }
+            }
+        }
     }
+
     else if (msg.find("\"type\":\"WANT_TO_PLAY_IN_NEXT_ROUND\"") != std::string::npos) {
         client->join_intent = JoinIntent::NEXT_ROUND;
         game.addToNextRound(client);

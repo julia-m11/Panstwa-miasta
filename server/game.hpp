@@ -26,7 +26,7 @@ private:
     bool time_warning_sent;
     int game_over_timer;
     bool round_start_pending;
-
+    bool forced_round_end;
 
     std::vector<std::shared_ptr<client>> players;
     std::vector<std::shared_ptr<client>> next_round_players;
