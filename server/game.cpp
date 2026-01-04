@@ -116,11 +116,6 @@ void Game::submitAnswers(std::shared_ptr<client> player, const std::string& msg)
     }
 
 
-/*
-    if (!time_warning_sent && round_time_remaining > 10) {
-        round_time_remaining = 10;
-    }
-*/
     if (submissions.size() == players.size()) {
         state = GameState::ROUND_SCORING;
     }
@@ -224,7 +219,6 @@ case GameState::IN_ROUND:
 
     
 
-
     case GameState::ROUND_SCORING:
         scoreRound();
         return true;
@@ -241,9 +235,6 @@ case GameState::IN_ROUND:
         return false;
     }
 }
-
-
-
 
 
 void Game::startRound() {
@@ -315,10 +306,9 @@ std::string Game::gameStatusJson(std::shared_ptr<client>) const {
           << current_round << "}";
     }
     else if (state == GameState::GAME_OVER) {
-    o << R"({"type":"GAME_STATUS","game_status":"GAME_OVER"})";
-}
+        o << R"({"type":"GAME_STATUS","game_status":"GAME_OVER"})";
+    }
 
-    //o << "\n";
     return o.str();
 }
 
@@ -333,7 +323,6 @@ std::string Game::roundStartJson(std::shared_ptr<client> p) {
       << R"(,"players_count":)" << players.size()
       << "}";
 
-    //o << "\n";
     return o.str();
 }
 
@@ -366,6 +355,5 @@ std::string Game::finalScoresJson(std::shared_ptr<client> p) {
     }
 
     o << "]}";
-    //o << "\n";
     return o.str();
 }

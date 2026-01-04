@@ -203,10 +203,14 @@ void Server::handle_connecting(std::shared_ptr<client> c, const std::string& nic
 void Server::broadcast_game_status() {
     for (auto& [fd, c] : clients) {
         if (c->nick_accepted) {
-            c->sendMessage(game.gameStatusJson(c));
+            std::string json = game.gameStatusJson(c);
+            if (!json.empty()) {
+                c->sendMessage(json);
+            }
         }
     }
 }
+
 
 void Server::send_json(int fd, const std::string& json) {
     send(fd, json.c_str(), json.size(), 0);
