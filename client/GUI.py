@@ -314,7 +314,7 @@ class Game_window(tk.Frame):
             ent.grid(row=1, column=i, padx=5, pady=5)
             self.entries[kat.lower()] = ent
 
-        self.btn_stop = ttk.Button(self, text="ZATWIERDŹ", command=lambda: self.send_answers(is_first=True))
+        self.btn_stop = ttk.Button(self, text="ZATWIERDŹ", command=lambda: self.send_answers(triggered_by_user=True))
         self.btn_stop.pack(pady=20)
 
         self.warning_label = tk.Label(self, text="", font=("Arial", 14, "bold"), fg="darkorange", bg='white')
@@ -341,7 +341,7 @@ class Game_window(tk.Frame):
             self.after_cancel(self.auto_send_timer_id)
             self.auto_send_timer_id = None
 
-    def send_answers(self, is_first=False):
+    def send_answers(self, triggered_by_user=False):
         """Pobiera dane i wysyła do serwera. is_first=True jeśli kliknął przycisk."""
         
         if self.answers_sent:
@@ -361,12 +361,21 @@ class Game_window(tk.Frame):
         odpowiedzi = {kat: ent.get() for kat, ent in self.entries.items()}
         self.kontroler.wyslij_wiadomosc_do_serwera({
             "type": "ROUND_END_ANSWERS",
-            "answers": odpowiedzi,
-            "is_first": is_first 
+            "answers": odpowiedzi
         })
         
-        self.warning_label.config(text="Odpowiedzi wysłane. Czekanie na wyniki...", fg="green")
-        print(f"[DEBUG] Wysłano ROUND_END_ANSWERS. is_first={is_first}")
+        if triggered_by_user: # w zaleznosci jak zosttaly wyslane wiadomosci
+            self.warning_label.config(
+                text="Odpowiedzi wysłane. Czekanie na innych...",
+                fg="green"
+            )
+        else:
+            self.warning_label.config(
+                text="Czas minął. Odpowiedzi wysłane automatycznie.",
+                fg="green"
+            )
+        #self.warning_label.config(text="Odpowiedzi wysłane. Czekanie na wyniki...", fg="green")
+        #print(f"[DEBUG] Wysłano ROUND_END_ANSWERS. is_first={is_first}")
 
     def activate_time_warning(self, seconds):
         """Uruchamia licznik po tym, jak ktoś inny skończył."""
