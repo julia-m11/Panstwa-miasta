@@ -74,12 +74,22 @@ void Server::run() {
 
         broadcast_round_start_if_needed();
     }
-
-        if (game.shouldSendTimeWarning()) {
+    if (state_changed && game.getState() == GameState::GAME_OVER) {
         for (auto& [fd, c] : clients) {
-            c->sendMessage(R"({"type":"TIME_WARNING","time_left":10})");
+            if (c->nick_accepted) {
+                c->sendMessage(game.finalScoresJson(c));
+            }
         }
-}
+    }
+
+
+    if (game.shouldSendTimeWarning()) {
+        for (auto& [fd, c] : clients) {
+            if (c->nick_accepted) {
+                c->sendMessage(R"({"type":"TIME_WARNING","time_left":10})");
+            }
+        }
+    }
 
     }
 }

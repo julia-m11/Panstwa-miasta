@@ -53,10 +53,8 @@ public:
     void startRound();
     void resetGame();
 
-    bool tick(); // 
+    bool tick(); 
 
-    std::string gameStatusJson(std::shared_ptr<client> p) const;
-    std::string roundStartJson(std::shared_ptr<client> p);
 
     bool shouldStartRound();
     bool shouldSendTimeWarning();
@@ -69,6 +67,8 @@ public:
     }
 
 
-
+    std::string gameStatusJson(std::shared_ptr<client> p) const;
+    std::string roundStartJson(std::shared_ptr<client> p);
+    std::string finalScoresJson(std::shared_ptr<client> p);
 
 };

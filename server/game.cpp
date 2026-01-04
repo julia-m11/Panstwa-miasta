@@ -134,20 +134,18 @@ void Game::scoreRound() {
             std::string other_ans = (it2 != other.answers.end()) ? it2->second : "";
             std::transform(other_ans.begin(), other_ans.end(), other_ans.begin(), ::tolower);
             if (other_ans == ans_lower) count++;
+            }
+
+            points += (count > 1) ? 10 : 15;
         }
-
-        points += (count > 1) ? 10 : 15;
+        sub.player->addPoints(points);
     }
-    sub.player->addPoints(points);
-}
-
-
 
     submissions.clear();
 
     if (current_round >= 5) {
         state = GameState::GAME_OVER;
-        game_over_timer = 15;
+        game_over_timer = 20;
     } else {
         state = GameState::COUNTDOWN;
         countdown = 10;
@@ -167,7 +165,6 @@ bool Game::shouldSendTimeWarning() {
     return false;
 }
 
-
 bool Game::tick() {
     switch (state) {
 
@@ -181,41 +178,50 @@ bool Game::tick() {
 
     case GameState::IN_ROUND:
         round_time_remaining--;
-
-        if (round_time_remaining == 10) {
+        if (round_time_remaining == 10 && !time_warning_sent) {
+            time_warning_sent = true;
             return false;
         }
 
         if (round_time_remaining <= 0) {
             for (auto& p : players) {
-                auto it = std::find_if(submissions.begin(), submissions.end(),
-                    [&p](const RoundSubmission& s){ return s.player == p; });
+                auto it = std::find_if(
+                    submissions.begin(),
+                    submissions.end(),
+                    [&p](const RoundSubmission& s) {
+                        return s.player == p;
+                    }
+                );
 
                 if (it == submissions.end()) {
                     RoundSubmission empty;
                     empty.player = p;
                     empty.answers = {
-                        {"państwo",""}, {"miasto",""},
-                        {"roślina",""}, {"zwierzę",""}, {"rzecz",""}
+                        {"państwo",""},
+                        {"miasto",""},
+                        {"roślina",""},
+                        {"zwierzę",""},
+                        {"rzecz",""}
                     };
                     submissions.push_back(empty);
                 }
             }
 
             state = GameState::ROUND_SCORING;
-            return true; 
+            return true;
         }
+
         return false;
 
     case GameState::ROUND_SCORING:
         scoreRound();
-        return true; 
+        return true;
 
     case GameState::GAME_OVER:
         game_over_timer--;
         if (game_over_timer <= 0) {
             resetGame();
-            return true; 
+            return true;
         }
         return false;
 
@@ -223,6 +229,7 @@ bool Game::tick() {
         return false;
     }
 }
+
 
 
 
@@ -249,6 +256,10 @@ void Game::startRound() {
 
 void Game::resetGame() {
     players.clear();
+    for (auto& p : players) {
+        p->resetPoints();
+    }
+
 
     for (auto& p : queued_players) {
         p->resetPoints();
@@ -310,6 +321,39 @@ std::string Game::roundStartJson(std::shared_ptr<client> p) {
       << R"(,"players_count":)" << players.size()
       << "}";
 
+    o << "\n";
+    return o.str();
+}
+
+std::string Game::finalScoresJson(std::shared_ptr<client> p) {
+    std::vector<std::shared_ptr<client>> sorted = players;
+
+    std::sort(sorted.begin(), sorted.end(),
+        [](auto a, auto b) {
+            return a->getPoints() > b->getPoints();
+        });
+
+    int place = 1;
+    for (size_t i = 0; i < sorted.size(); ++i) {
+        if (sorted[i] == p) {
+            place = i + 1;
+            break;
+        }
+    }
+
+    std::ostringstream o;
+    o << R"({"type":"FINAL_SCORES")";
+    o << R"(,"your_place":)" << place;
+    o << R"(,"total_points":)" << p->getPoints();
+    o << R"(,"top_3":[)";
+
+    for (size_t i = 0; i < sorted.size() && i < 3; ++i) {
+        if (i > 0) o << ",";
+        o << R"({"nick":")" << sorted[i]->getNick()
+          << R"(","points":)" << sorted[i]->getPoints() << "}";
+    }
+
+    o << "]}";
     o << "\n";
     return o.str();
 }
