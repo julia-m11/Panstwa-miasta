@@ -159,7 +159,7 @@ class Lobby(tk.Frame):
     # --- KONTENER PRZYCISKÓW WYBORU ---
         
         self.buttons_frame = ttk.Frame(self)
-        self.buttons_frame.pack(pady=30)
+        #self.buttons_frame.pack(pady=30)
             
         # Przycisk 1: Dołącz od nastepnej rundy - in_round
         self.btn_join_next_round = ttk.Button(
@@ -246,14 +246,16 @@ class Lobby(tk.Frame):
         
     def show_buttons(self, mode): #tu zmiana !!!
         self.hide_buttons() 
+        self.buttons_frame.pack_forget()
         
         if mode == 'GAME_OVER':
-            self.buttons_frame.pack_forget()
+            #self.buttons_frame.pack_forget()
             return 
 
-        self.buttons_frame.pack(pady=30) 
+        #self.buttons_frame.pack(pady=30) 
 
         if mode == 'IN_ROUND':
+            self.buttons_frame.pack(pady=30)
             self.btn_join_next_round.grid(row=0, column=0, padx=10)
             self.btn_queue.grid(row=0, column=1, padx=10)
             self.btn_join_next_round.config(state='normal')
