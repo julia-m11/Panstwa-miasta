@@ -200,7 +200,10 @@ void Server::handle_connecting(std::shared_ptr<client> c, const std::string& nic
 
 
     game.addPlayer(c);
-    broadcast_game_status();
+    if (game.getState() != GameState::IN_ROUND &&
+        game.getState() != GameState::ROUND_SCORING) {
+        broadcast_game_status();
+    }
 
     std::cout << "Nick accepted: " << nick << std::endl;
 }
