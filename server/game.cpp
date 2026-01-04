@@ -25,7 +25,9 @@ Game::Game()
       time_warning_sent(false),
       round_start_pending(false),
       forced_round_end(false),
-      scoring_pending(false)
+      scoring_pending(false),
+      round_closing(false)
+
 
 {
     std::srand(std::time(nullptr));
@@ -77,7 +79,7 @@ bool Game::shouldStartRound() {
 }
 
 void Game::submitAnswers(std::shared_ptr<client> player, const std::string& msg) {
-    if (state != GameState::IN_ROUND) return;
+    if (state != GameState::IN_ROUND && !round_closing) return;
 
 
     auto it = std::find_if(submissions.begin(), submissions.end(),
@@ -186,51 +188,29 @@ bool Game::tick() {
         }
         return false;
 
-case GameState::IN_ROUND:
-{
-    round_time_remaining--;
+    case GameState::IN_ROUND:
+        round_time_remaining--;
 
-    if (round_time_remaining <= 0) {
-        for (auto& p : players) {
-            auto it = std::find_if(
-                submissions.begin(),
-                submissions.end(),
-                [&p](const RoundSubmission& s) {
-                    return s.player == p;
-                }
-            );
-
-            if (it == submissions.end()) {
-                RoundSubmission empty;
-                empty.player = p;
-                empty.answers = {
-                    {"państwo",""},
-                    {"miasto",""},
-                    {"roślina",""},
-                    {"zwierzę",""},
-                    {"rzecz",""}
-                };
-                submissions.push_back(empty);
-            }
+        if (round_time_remaining <= 0 && !round_closing) {
+            round_closing = true;
+            return false;
         }
 
-        state = GameState::ROUND_SCORING;
-        return true;
-    }
+        if (round_closing || submissions.size() == players.size()) {
+            state = GameState::ROUND_SCORING;
+            scoring_pending = true;
+            return true;
+        }
 
-    return false;
-}
-
-    
+        return false;
 
     case GameState::ROUND_SCORING:
         if (scoring_pending) {
             scoring_pending = false;
-            return true;   // tylko zmiana stanu, NIC WIĘCEJ
+            scoreRound();
+            return true;
         }
-        scoreRound();
-        return true;
-
+        return false;
 
     case GameState::GAME_OVER:
         game_over_timer--;
@@ -246,7 +226,12 @@ case GameState::IN_ROUND:
 }
 
 
+
 void Game::startRound() {
+    if (!submissions.empty()) {
+        scoreRound();
+    }
+
     for (auto& p : next_round_players) {
         if (std::find(players.begin(), players.end(), p) == players.end()) {
             players.push_back(p);
@@ -262,7 +247,9 @@ void Game::startRound() {
     submissions.clear();
     round_start_pending = true;
     forced_round_end = false;
+    round_closing = false;
 }
+
 
 
 

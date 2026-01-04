@@ -28,6 +28,8 @@ private:
     bool round_start_pending;
     bool forced_round_end;
     bool scoring_pending;
+    bool round_closing;
+
 
 
     std::vector<std::shared_ptr<client>> players;
