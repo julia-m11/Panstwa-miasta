@@ -78,19 +78,20 @@ void Server::run() {
     }
 
         if (game.shouldSendTimeWarning()) {
-            for (auto& [fd, c] : clients) {
-                if (c->nick_accepted) {
-                    c->sendMessage(
-                        R"({"type":"TIME_WARNING","time_remaining":15})"
-                    );
-                }
+            for (auto& p : game.getPlayers()) {
+                p->sendMessage(
+                    R"({"type":"TIME_WARNING","time_remaining":15})"
+                );
             }
+
         }
 
         if (state_changed) {
+            /*
             if (game.getState() != GameState::IN_ROUND) {
                 broadcast_game_status();
             }
+            */
             broadcast_round_start_if_needed();
         }
 
@@ -131,16 +132,15 @@ void Server::disconnect_client(int fd) {
     std::shared_ptr<client> c = clients[fd];
 
     if (!c->getNick().empty()) {
-    nicks.erase(c->getNick());
-    std::cout << "Client left: " << c->getNick() << std::endl;
-    game.removePlayer(c->getSessionId());
-    broadcast_game_status();
-}
-
+        nicks.erase(c->getNick());
+        game.removePlayer(c->getSocket());
+    }
 
     close(fd);
     clients.erase(fd);
+    broadcast_game_status();
 }
+
 
 void Server::handle_message(std::shared_ptr<client> client, const std::string& msg) {
     if (msg.find("connecting_with_server") != std::string::npos) {
@@ -153,7 +153,9 @@ void Server::handle_message(std::shared_ptr<client> client, const std::string& m
         handle_connecting(client, nick);
     }
     else if (msg.find("REQUEST_GAME_INFO") != std::string::npos) {
-        client->sendMessage(game.gameStatusJson(client));
+        if (game.getState() == GameState::IN_ROUND || game.getState() == GameState::ROUND_SCORING || game.getState() == GameState::COUNTDOWN) {
+            client->sendMessage(game.gameStatusJson(client));
+        }
     }
     else if (msg.find("ROUND_END_ANSWERS") != std::string::npos) {
         game.submitAnswers(client, msg);
@@ -178,9 +180,8 @@ void Server::handle_message(std::shared_ptr<client> client, const std::string& m
         client->join_intent = JoinIntent::NEXT_GAME;
         game.addToQueue(client);
     }
-
-
 }
+
 
 
 
@@ -199,6 +200,11 @@ void Server::handle_connecting(std::shared_ptr<client> c, const std::string& nic
                    + std::to_string(c->getSessionId()) + "}");
 
 
+    game.addPlayer(c);
+    if (game.getState() == GameState::IN_ROUND ||
+        game.getState() == GameState::ROUND_SCORING) {
+        c->sendMessage(game.gameStatusJson(c));
+    }
     game.addPlayer(c);
     if (game.getState() != GameState::IN_ROUND &&
         game.getState() != GameState::ROUND_SCORING) {

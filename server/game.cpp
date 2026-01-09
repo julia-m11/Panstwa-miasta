@@ -56,19 +56,52 @@ void Game::addPlayer(std::shared_ptr<client> p) {
 
 
 void Game::removePlayer(int socket) {
-    players.erase(
-        std::remove_if(players.begin(), players.end(),
-            [socket](const std::shared_ptr<client>& p) {
-                return p->getSocket() == socket;
+
+    auto it = std::find_if(players.begin(), players.end(),
+        [socket](const std::shared_ptr<client>& p) {
+            return p->getSocket() == socket;
+        });
+
+    if (it == players.end())
+        return;
+
+    auto removed = *it;
+    players.erase(it);
+
+    submissions.erase(
+        std::remove_if(submissions.begin(), submissions.end(),
+            [&](const RoundSubmission& s) {
+                return s.player == removed;
             }),
-        players.end()
+        submissions.end()
     );
+
+    if (state == GameState::IN_ROUND || state == GameState::ROUND_SCORING) {
+
+        if (players.size() < 2) {
+            submissions.clear();
+            round_closing = false;
+            scoring_pending = false;
+            forced_round_end = false;
+            round_start_pending = false;
+
+            state = GameState::LOBBY;
+            countdown = 45;
+            current_round = 0;
+            return;
+        }
+        if (submissions.size() == players.size()) {
+            state = GameState::ROUND_SCORING;
+            scoring_pending = true;
+        }
+    }
 
     if (players.size() < 2) {
         state = GameState::LOBBY;
         countdown = 45;
     }
 }
+
 
 bool Game::shouldStartRound() {
     if (round_start_pending) {
@@ -298,7 +331,7 @@ std::string Game::gameStatusJson(std::shared_ptr<client>) const {
         o << R"({"type":"GAME_STATUS","game_status":"LOBBY","waiting_status":"COUNTDOWN","time_remaining":)"
           << countdown << "}";
     }
-    else if (state == GameState::IN_ROUND) {
+    else if (state == GameState::IN_ROUND || state == GameState::ROUND_SCORING || state == GameState::COUNTDOWN) {
         o << R"({"type":"GAME_STATUS","game_status":"IN_ROUND","current_round":)"
           << current_round << "}";
     }
