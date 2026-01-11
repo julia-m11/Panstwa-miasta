@@ -21,10 +21,10 @@ private:
     int countdown;
     int current_round;
     char current_letter;
-    int round_time_remaining;
-    bool round_started;
-    bool time_warning_sent;
     int game_over_timer;
+    int round_time_remaining;
+    bool time_warning_sent;
+    bool round_started;
     bool round_start_pending;
     bool forced_round_end;
     bool scoring_pending;
