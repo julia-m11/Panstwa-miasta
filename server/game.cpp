@@ -274,7 +274,8 @@ void Game::startRound() {
     next_round_players.clear();
     state = GameState::IN_ROUND;
     current_round++;
-    current_letter = 'A' + (std::rand() % 26);
+    std::string allowed_letters = "ABCDEFGHIJKLMNOPRSTUWZ"; 
+    current_letter = allowed_letters[std::rand() % allowed_letters.length()];
     round_time_remaining = 180;
     time_warning_sent = false;
     submissions.clear();
