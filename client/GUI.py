@@ -759,6 +759,7 @@ class App(tk.Tk):
         self.current_round_active = round_num
         #self.round_start_received = True
 
+        self.ekrany['Lobby'].is_joined = False #reset flagi is_joined do wysylania want_to_play
         self.pokaz_ekran(Game_window)
         self.ekrany['Game_window'].start_round_gui(round_num, letter, points)
         
@@ -771,6 +772,7 @@ class App(tk.Tk):
 
     def handle_final_scores(self, data):
         print("[GUI] Otrzymano wyniki końcowe. Przełączam na Result_window.")
+        self.ekrany['Lobby'].is_joined = False
         self.pokaz_ekran(Result_window)
         self.ekrany['Result_window'].show_results(data)
 
