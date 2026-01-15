@@ -427,9 +427,16 @@ class Result_window(tk.Frame):
         btn_frame = tk.Frame(self, bg='#f0f0f0')
         btn_frame.pack(pady=20)
 
-        # Zostawiamy tylko przycisk wyjścia
+        self.btn_join_new = ttk.Button(
+            btn_frame, 
+            text="Dołącz do nowej gry", 
+            command=self.return_to_lobby
+        )
+        self.btn_join_new.grid(row=0, column=0, padx=10)
+
+        # przycisk wyjścia
         self.btn_quit = ttk.Button(btn_frame, text="Wyjdź z gry", command=self.kontroler.on_closing)
-        self.btn_quit.pack(pady=10)
+        self.btn_quit.grid(row=0, column=1, padx=10)
 
     def show_results(self, data):
         your_place = data.get("your_place", "?")
