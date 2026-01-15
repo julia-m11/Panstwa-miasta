@@ -766,12 +766,16 @@ class App(tk.Tk):
         print(f"[GUI] Runda {round_num} wystartowała z {players_count} graczami.")
 
     def handle_time_warning(self, data):
+
+        if self.current_round_active is None: #ignorowanie time_warning gdy jest w trakcie gry
+            print("dostalam time_qwarning ignoruje")
+            return
+
         time_left = data.get("time_left", 15)
         if 'Game_window' in self.ekrany:
             self.ekrany['Game_window'].activate_time_warning(time_left)
 
     def handle_final_scores(self, data):
-        print("[GUI] Otrzymano wyniki końcowe. Przełączam na Result_window.")
         self.ekrany['Lobby'].is_joined = False
         self.pokaz_ekran(Result_window)
         self.ekrany['Result_window'].show_results(data)
