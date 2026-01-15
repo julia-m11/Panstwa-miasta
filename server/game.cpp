@@ -161,6 +161,8 @@ void Game::submitAnswers(std::shared_ptr<client> player, const std::string& msg)
 
 
 void Game::scoreRound() {
+    char lower_current = std::tolower(static_cast<unsigned char>(current_letter));
+    
     for (auto& sub : submissions) {
     int points = 0;
     for (const auto& cat : {"państwo","miasto","roślina","zwierzę","rzecz"}) {
@@ -169,10 +171,14 @@ void Game::scoreRound() {
 
         if (ans.empty()) continue; 
 
-        int count = 0;
         std::string ans_lower = ans;
         std::transform(ans_lower.begin(), ans_lower.end(), ans_lower.begin(), ::tolower);
 
+            if (ans_lower[0] != lower_current) { // pierwsza litera się nie zgadza, gracz dostaje 0 
+                continue; 
+            }
+
+        int count = 0;
         for (auto& other : submissions) {
             auto it2 = other.answers.find(cat);
             std::string other_ans = (it2 != other.answers.end()) ? it2->second : "";
