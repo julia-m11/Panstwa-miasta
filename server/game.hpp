@@ -51,11 +51,13 @@ public:
     public:
     void setState(GameState newState) { state = newState; }
     GameState getState() const { return state; }
+    int getCurrentRound() const;
 
     void addPlayer(std::shared_ptr<client> p);
     void removePlayer(int socket);
     void startRound();
     void resetGame();
+    bool tryStartLobbyCountdown();
 
     bool tick(); 
 
