@@ -42,6 +42,7 @@ private:
     };
 
     std::vector<RoundSubmission> submissions;
+    std::vector<char> used_letters;
 
 
 
@@ -58,6 +59,8 @@ public:
     void startRound();
     void resetGame();
     bool tryStartLobbyCountdown();
+    bool wasPlayerInCurrentGame(std::shared_ptr<client> c) const;
+
 
     bool tick(); 
 

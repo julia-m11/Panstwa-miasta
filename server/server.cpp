@@ -57,7 +57,7 @@ void Server::run() {
         GameState now = game.getState();
         if (prev != GameState::GAME_OVER && now == GameState::GAME_OVER) {
         for (auto& [fd, c] : clients) {
-            if (c->nick_accepted) {
+            if (c->nick_accepted && game.wasPlayerInCurrentGame(c)) {
                 c->sendMessage(game.finalScoresJson(c));
             }
         }
@@ -73,7 +73,7 @@ void Server::run() {
                 );
             }
         }
-        if (state_changed) {
+        if (state_changed && prev != now) {
             broadcast_round_start_if_needed();
         }
     }
@@ -200,14 +200,13 @@ void Server::handle_connecting(std::shared_ptr<client> c, const std::string& nic
     );
 
     GameState state = game.getState();
-
-    if (state == GameState::IN_ROUND || state == GameState::ROUND_SCORING) {
-        int current_round = game.getCurrentRound();
+    int current_round = game.getCurrentRound();
+    if (state == GameState::IN_ROUND || state == GameState::ROUND_SCORING || (state == GameState::COUNTDOWN && current_round > 0)) {
         std::ostringstream o;
         o << R"({"type":"GAME_STATUS","game_status":"IN_ROUND","current_round":)"
           << current_round << "}";
         c->sendMessage(o.str());
-        std::cout << "Nick accepted during round/roundscoring: " << nick << std::endl;
+        std::cout << "Nick accepted during active game: " << nick << std::endl;
         return;
     }
 
