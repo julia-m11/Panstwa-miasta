@@ -219,25 +219,34 @@ void Server::handle_connecting(std::shared_ptr<client> c, const std::string& nic
 
 
 void Server::broadcast_game_status() {
+    GameState current_state = game.getState();
     for (auto& [fd, c] : clients) {
         if (!c->nick_accepted) continue;
         bool should_send = false;
 
-        if (current_state == GameState::COUNTDOWN || current_state == GameState::LOBBY) {
-            // WYSYŁAJ TYLKO DO TYCH, KTÓRZY CHCĄ GRAĆ
+        if (current_state == GameState::LOBBY) {
+            should_send = true; 
+        }
+        
+        else if (current_state == GameState::COUNTDOWN) {
             if (c->join_intent != JoinIntent::NONE) {
                 should_send = true;
             }
-        } else {
-            // W trakcie rundy wysyłaj do aktywnych uczestników
+        }
+        
+        else if (current_state == GameState::IN_ROUND || current_state == GameState::ROUND_SCORING) {
             if (game.wasPlayerInCurrentGame(c)) {
                 should_send = true;
             }
         }
+        
+        else if (current_state == GameState::GAME_OVER) {
+            should_send = true; 
+        }
+
         if (should_send) {
             c->sendMessage(game.gameStatusJson(c));
         }
-
     }
 }
 

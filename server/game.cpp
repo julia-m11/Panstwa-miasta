@@ -270,9 +270,9 @@ void Game::startRound() {
     }
     next_round_players.clear();
 
-    if (current_round == 0) { // Jeśli to start pierwszej rundy meczu
+    if (current_round == 0) { 
         for (auto& p : players) {
-            p->join_intent = JoinIntent::NONE; // Intencja spełniona, resetujemy
+            p->join_intent = JoinIntent::NONE; 
         }
     }
 
