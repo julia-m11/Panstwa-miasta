@@ -420,10 +420,12 @@ bool Game::tryStartLobbyCountdown() {
         if (p->join_intent == JoinIntent::NEXT_GAME)
             ready++;
     }
+    ready += queued_players.size();
     if (ready >= 2) {
-        countdown = 45;
-        current_round = 0;
-        state = GameState::COUNTDOWN;
+        //countdown = 45;
+        //current_round = 0;
+        //state = GameState::COUNTDOWN;
+        resetGame();
         return true;
     }
     return false;
