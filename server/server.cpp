@@ -221,15 +221,20 @@ void Server::handle_connecting(std::shared_ptr<client> c, const std::string& nic
 void Server::broadcast_game_status() {
     for (auto& [fd, c] : clients) {
         if (!c->nick_accepted) continue;
-        // Status wysyłamy jeśli:
-        // 1. Gracz już kliknął "Graj" (NEXT_GAME / NEXT_ROUND)
-        // 2. Gracz jest w kolejce
-        // 3. Gra jest w toku (IN_ROUND), a on jest aktywnym graczem
-        bool should_receive = (c->join_intent != JoinIntent::NONE) || 
-                            game.wasPlayerInCurrentGame(c) ||
-                            (game.getState() == GameState::IN_ROUND);
+        bool should_send = false;
 
-        if (should_receive) {
+        if (current_state == GameState::COUNTDOWN || current_state == GameState::LOBBY) {
+            // WYSYŁAJ TYLKO DO TYCH, KTÓRZY CHCĄ GRAĆ
+            if (c->join_intent != JoinIntent::NONE) {
+                should_send = true;
+            }
+        } else {
+            // W trakcie rundy wysyłaj do aktywnych uczestników
+            if (game.wasPlayerInCurrentGame(c)) {
+                should_send = true;
+            }
+        }
+        if (should_send) {
             c->sendMessage(game.gameStatusJson(c));
         }
 

@@ -269,9 +269,16 @@ void Game::startRound() {
         p->join_intent = JoinIntent::NONE;
     }
     next_round_players.clear();
+
+    if (current_round == 0) { // Jeśli to start pierwszej rundy meczu
+        for (auto& p : players) {
+            p->join_intent = JoinIntent::NONE; // Intencja spełniona, resetujemy
+        }
+    }
+
     state = GameState::IN_ROUND;
     current_round++;
-
+    round_start_pending = true;
     if (current_round == 1) {
         for (auto& p : players) {
             p->resetPoints();
@@ -306,20 +313,26 @@ void Game::startRound() {
 
 void Game::resetGame() {
     std::vector<std::shared_ptr<client>> still_playing;
-    for (auto& p : players) {
-        if (p->join_intent == JoinIntent::NEXT_GAME) {
-            p->resetPoints();
-            p->join_intent = JoinIntent::NONE;
-            still_playing.push_back(p);
-        }
-    }
+
     for (auto& p : queued_players) {
-        p->resetPoints();
-        p->join_intent = JoinIntent::NONE;
-        still_playing.push_back(p);
+        if (std::find(players.begin(), players.end(), p) == players.end()) {
+            players.push_back(p);
+        }
+        p->join_intent = JoinIntent::NEXT_GAME; // Oni chcą grać na pewno
     }
-    players = std::move(still_playing);
+
     queued_players.clear();
+
+    for (auto& p : players) {
+        //if (p->join_intent == JoinIntent::NEXT_GAME) {
+            p->resetPoints();
+            //p->join_intent = JoinIntent::NONE;
+            //still_playing.push_back(p);
+        //}
+    }
+
+    //players = std::move(still_playing);
+    //queued_players.clear();
     next_round_players.clear();
     used_letters.clear();
     current_round = 0;
@@ -330,6 +343,12 @@ void Game::resetGame() {
     scoring_pending = false;
     round_start_pending = false;
     time_warning_sent = false;
+
+    size_t ready_to_play = 0;
+    for (auto& p : players) {
+        if (p->join_intent == JoinIntent::NEXT_GAME) ready_to_play++;
+    }
+
     if (players.size() >= 2) {
         state = GameState::COUNTDOWN;
     } else {
