@@ -135,47 +135,40 @@ class Lobby(tk.Frame):
         self.config(bg='lightblue')
         self.is_joined = False
 
-        #timer dla countdown
-        self.countdown_id = None    # ID timera Tkinter (dla self.after)
+        self.countdown_id = None    
         self.remaining_time = 0     # Czas pozostały w sekundach
-        self.countdown_active = False # Flaga, czy odliczanie jest w toku
+        self.countdown_active = False # czy odliczanie jest w toku
 
-        #timer dla idle
         self.idle_timeout_id = None # ID timera do pytania o dalsze czekanie
-        self.IDLE_TIMEOUT_MS = 120000 # 2 minuty = 120 000 ms
+        self.IDLE_TIMEOUT_MS = 120000 
         self.is_countdown_active = False
 
-        # Etykieta statusu gry
         self.game_status_label = ttk.Label(self, text="", font=("Arial", 20), background='lightgray')
         self.game_status_label.pack(pady=(40,20))
 
-        # Etykieta komunikatów dla gracza
         self.player_message_label = ttk.Label(self, text="", font=("Arial", 14), background='lightblue')
         self.player_message_label.pack(pady=(10,10))
 
         self.countdown_label = ttk.Label(self, text="", font=("Arial", 20), foreground='red')
         self.countdown_label.pack(pady=(10,10))
 
-    # --- KONTENER PRZYCISKÓW WYBORU ---
-        
         self.buttons_frame = ttk.Frame(self)
-        #self.buttons_frame.pack(pady=30)
             
-        # Przycisk 1: Dołącz od nastepnej rundy - in_round
+        # Dołącz od nastepnej rundy - in_round
         self.btn_join_next_round = ttk.Button(
             self.buttons_frame, 
             text="Dołącz od następnej rundy",
             command=lambda: self.send_lobby_choice("WANT_TO_PLAY_IN_NEXT_ROUND")
         )
         
-        # Przycisk 2: Czekaj na nową grę - in_round
+        # Czekaj na nową grę - in_round
         self.btn_queue = ttk.Button(
             self.buttons_frame, 
             text="Czekaj na nową grę",
             command=lambda: self.send_lobby_choice("WANT_TO_QUEUE")
         )
 
-        # Przycisk 3: Dołacz do nowej gry - lobby
+        # Dołacz do nowej gry - lobby
         self.btn_join_game = ttk.Button(
             self.buttons_frame, 
             text="Dołącz do nowej gry",
@@ -244,15 +237,12 @@ class Lobby(tk.Frame):
         self.btn_join_next_round.grid_forget()
         self.btn_queue.grid_forget()
         
-    def show_buttons(self, mode, current_round=0): #tu zmiana !!!
+    def show_buttons(self, mode, current_round=0): 
         self.hide_buttons() 
         self.buttons_frame.pack_forget()
         
         if mode == 'GAME_OVER':
-            #self.buttons_frame.pack_forget()
-            return 
-
-        #self.buttons_frame.pack(pady=30) 
+            return  
 
         if mode == 'IN_ROUND':
             self.buttons_frame.pack(pady=30)
@@ -261,13 +251,11 @@ class Lobby(tk.Frame):
                 self.btn_join_next_round.grid(row=0, column=0, padx=10)
                 self.btn_join_next_round.config(state='normal')
 
-            #self.btn_join_next_round.grid(row=0, column=0, padx=10)
             self.btn_queue.grid(row=0, column=1, padx=10)
-            #self.btn_join_next_round.config(state='normal')
             self.btn_queue.config(state='normal')
         
         elif mode == 'LOBBY':
-            # Tutaj nie wyświetlamy już btn_join_game, bo wysyłamy WANT_TO_PLAY automatycznie
+            # wysyłanie WANT_TO_PLAY automatycznie
             pass
             
     def send_lobby_choice(self, choice_type):
@@ -276,7 +264,6 @@ class Lobby(tk.Frame):
         self.btn_join_game.config(state='disabled')
         self.btn_queue.config(state='disabled')
         self.btn_join_next_round.config(state='disabled')
-        #self.player_message_label.config(text="Czekam na potwierdzenie statusu od serwera...")
 
         if choice_type == "WANT_TO_PLAY":
         
@@ -324,7 +311,7 @@ class Game_window(tk.Frame):
         self.btn_stop = ttk.Button(self, text="ZATWIERDŹ", command=lambda: self.send_answers(triggered_by_user=True))
         self.btn_stop.pack(pady=20)
 
-        self.warning_label = tk.Label(self, text="", font=("Arial", 14, "bold"), fg="darkorange", bg='white')
+        self.warning_label = tk.Label(self, text="", font=("Arial", 14, "bold"), fg="green", bg='white')
         self.warning_label.pack(pady=5)
         
         self.auto_send_timer_id = None
@@ -332,7 +319,6 @@ class Game_window(tk.Frame):
 
     def start_round_gui(self, round_num, letter, points):
         self.answers_sent = False
-        """Metoda wywoływana przez App przy ROUND_START"""
         self.round_label.config(text=f"Runda: {round_num}/5")
         self.letter_label.config(text=f"LITERA: {letter}")
         self.points_label.config(text=f"Twoje punkty: {points}")
@@ -381,11 +367,8 @@ class Game_window(tk.Frame):
                 text="Czas minął. Odpowiedzi wysłane automatycznie.",
                 fg="green"
             )
-        #self.warning_label.config(text="Odpowiedzi wysłane. Czekanie na wyniki...", fg="green")
-        #print(f"[DEBUG] Wysłano ROUND_END_ANSWERS. is_first={is_first}")
 
     def activate_time_warning(self, seconds):
-        """Uruchamia licznik po tym, jak ktoś inny skończył."""
         if self.answers_sent:
             print("[DEBUG] Otrzymano TIME_WARNING, ale odpowiedzi są już wysłane. Ignoruję.")
             return # Już wysłaliśmy odpowiedzi, ignorujemy
@@ -420,10 +403,6 @@ class Result_window(tk.Frame):
         self.ranking_label = tk.Label(self, text="", font=("Courier", 14), bg='white', relief="sunken", width=40, height=5)
         self.ranking_label.pack(pady=10)
 
-        # Label informujący o powrocie do lobby
-        self.timer_label = tk.Label(self, text="", font=("Arial", 12), fg="darkgreen", bg='#f0f0f0')
-        self.timer_label.pack(pady=20)
-
         btn_frame = tk.Frame(self, bg='#f0f0f0')
         btn_frame.pack(pady=20)
 
@@ -452,9 +431,6 @@ class Result_window(tk.Frame):
             ranking_text += f"{i+1}. {player['nick']} - {player['points']} pkt\n"
         
         self.ranking_label.config(text=ranking_text)
-        
-        # Startujemy odliczanie do POWROTU DO LOBBY
-        self.start_return_timer(20)
 
     def start_return_timer(self, seconds):
         if self.quit_timer_id:
@@ -464,16 +440,11 @@ class Result_window(tk.Frame):
             self.timer_label.config(text=f"Powrót do poczekalni za: {seconds} s...")
             self.quit_timer_id = self.after(1000, lambda: self.start_return_timer(seconds - 1))
         else:
-            print("[GUI] Czas wyświetlania wyników minął. Wracam do Lobby.")
+            print("Czas wyświetlania wyników minął")
             self.return_to_lobby()
 
     def return_to_lobby(self):
-        """Zatrzymuje timer i wraca do Lobby."""
-        if self.quit_timer_id:
-            self.after_cancel(self.quit_timer_id)
-            self.quit_timer_id = None
-        
-        # Przełączamy na Lobby - to automatycznie wywoła REQUEST_GAME_INFO w App.pokaz_ekran
+        # wywoła REQUEST_GAME_INFO 
         self.kontroler.pokaz_ekran(Lobby)
     
 # ------------------------------glowne okno----------------------------------------------
@@ -574,7 +545,7 @@ class App(tk.Tk):
         except Empty:
             pass 
         except Exception as e:
-            print(f"[ERROR GUI] Krytyczny błąd podczas sprawdzania kolejki: {e}") 
+            print(f"Błąd podczas sprawdzania kolejki: {e}") 
 
         self.after(100, self.sprawdz_kolejke_sieciowa)
 
@@ -611,14 +582,11 @@ class App(tk.Tk):
     def handle_nick_accepted(self, data):
         session_id = data.get("session_id", "BRAK ID")
         self.dane_gry['session_id'] = session_id
-        
-        print(f"Nick dostępny i zaakceptowany. ID sesji: {session_id}")
-        
         self.pokaz_ekran(Lobby)
 
     def handle_nick_rejected(self, data):
 
-        reason = data.get("reason", "Nick jest zajęty") # drugi argument wartosc domyslna
+        reason = data.get("reason", "Nick jest zajęty") 
         
         messagebox.showerror(
             "Niepoprawny nick", 
@@ -631,7 +599,7 @@ class App(tk.Tk):
             print("Nie można odblokować przycisku, ekran logowania niedostępny.")
 
 
-    def handle_network_error(self, data): # poprawic ta funkcje !
+    def handle_network_error(self, data):
 
         reason = data.get("reason", "Nieznany błąd sieci.")
         
@@ -652,13 +620,8 @@ class App(tk.Tk):
         game_state = data.get("game_status")
         current_round = data.get("current_round", 0)
 
-        #if game_state == "IN_ROUND":
-         #   current_round = data.get("current_round", 0)
-         #   if not getattr(self, 'round_start_received', False):
-          #      return
-        
         if game_state == "IN_ROUND" or game_state == "GAME_OVER":
-            # Akcja: Zawsze zatrzymujemy licznik, jeśli gra wystartowała lub się skończyła
+            # zawsze zatrzymujemy licznik, jeśli gra wystartowała lub się skończyła
             ekran_lobby.is_joined = False
             ekran_lobby.stop_countdown() 
             ekran_lobby.cancel_idle_timer()
@@ -666,9 +629,9 @@ class App(tk.Tk):
             
         elif game_state == "LOBBY":
 
-            if self.current_round_active is not None: # potencjalnie do zmiany
-                self.current_round_active = None  #
-                self.pokaz_ekran(Lobby) #
+            if self.current_round_active is not None: 
+                self.current_round_active = None  
+                self.pokaz_ekran(Lobby) 
 
             if not getattr(ekran_lobby, "is_joined", False):
                 ekran_lobby.send_lobby_choice("WANT_TO_PLAY")
@@ -728,22 +691,6 @@ class App(tk.Tk):
             ekran_lobby.player_message_label.config(
                 text="Rozgrywka zakończona. Trwa wypisywanie wyników, za chwilę zostaniesz \nprzekierowany do poczekalni."
             )
-        
-        #ekran_lobby.show_buttons(game_state) 
-
-        #if game_state == "IN_ROUND":
-         #   ekran_lobby.player_message_label.config(
-        #        text="Gra trwa. Możesz dołączyć do następnej rundy lub czekać na nową grę."
-        #    )
-        #elif game_state == "LOBBY":
-           # ekran_lobby.player_message_label.config(
-             #   text="Kliknij 'Dołącz do Nowej Gry', aby zgłosić gotowość."
-           # )
-        #if game_state == "GAME_OVER":
-         #   ekran_lobby.player_message_label.config(
-         #       text="Rozgrywka zakończona. Trwa wypisywanie wyników, za chwilę zostaniesz \nprzekierowany do poczekalni."
-         #   )
-
 
     def handle_round_start(self, data):
         players_count = data.get("players_count", 0)
