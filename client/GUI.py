@@ -89,7 +89,6 @@ class Log_in_window(tk.Frame):
         self.kontroler.nawiaz_polaczenie_z_serwerem(ip_serwera, port_serwera_int)
     
         if self.kontroler.socket_polaczenia:
-            print("Połączenie udane, wysyłam nick do serwera...")
             sock = self.kontroler.socket_polaczenia
             
             dane_do_wyslania = {
