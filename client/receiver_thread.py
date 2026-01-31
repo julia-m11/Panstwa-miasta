@@ -3,7 +3,7 @@ import threading
 import json
 import socket
 
-class ReceiverThread(threading.Thread): # jako osobny watek
+class ReceiverThread(threading.Thread): 
     def __init__(self, sock, queue, controller):
         super().__init__(daemon=True)
         self.sock = sock
@@ -12,15 +12,13 @@ class ReceiverThread(threading.Thread): # jako osobny watek
         self.running = True
 
     def run(self):
-        print("receiver_thread - wątek odbiorczy wystartował")
         while self.running:
             try:
                 response_json_string = network_manager.receive_data_and_process(self.sock)
                 
-                if response_json_string is False: # rozłączenie z network_manager.receive_data_and_process
-                    print("BŁĄD - receiver_thread.run : serwer zerwał połączenie (brak danych)")
+                if response_json_string is False: 
                     self.controller.network_queue.put(
-                        json.dumps({"type": "network_error", "reason": "Serwer rozłączył się."}) # wiadomosc do GUI ze klienta rozlaczylo
+                        json.dumps({"type": "network_error", "reason": "Serwer rozłączył się."}) 
                     )
                     break
                     
@@ -36,12 +34,11 @@ class ReceiverThread(threading.Thread): # jako osobny watek
                     )
                 break
         self.running = False
-        #print("receiver_thread - wątek odbiorczy zakończony")
 
     def stop(self):
         self.running = False
         try:
             self.sock.shutdown(socket.SHUT_RDWR) 
-            self.sock.close() # zamyka socket
+            self.sock.close() 
         except:
             pass

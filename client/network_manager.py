@@ -29,7 +29,7 @@ def get_next_message():
     if '\n' in CLIENT_SOCKET_BUFFER:
         line, CLIENT_SOCKET_BUFFER = CLIENT_SOCKET_BUFFER.split('\n', 1) 
         return line
-    return None # w przypadku  braku pelnej wiadomosci
+    return None 
 
 def receive_data_and_process(sock, buffer_size=4096):
     global CLIENT_SOCKET_BUFFER
@@ -49,9 +49,9 @@ def receive_data_and_process(sock, buffer_size=4096):
         return None 
     except Exception as e:
         print(f"BŁĄD - receive_data_and_process : blad podczas odbierania: {e}")
-        return False # gdy sie rozlaczy
+        return False 
 
-def receive_first_message_blocking(sock, buffer_size=4096): # funkcja używana tylko podczas logowania
+def receive_first_message_blocking(sock, buffer_size=4096): 
     global CLIENT_SOCKET_BUFFER
     CLIENT_SOCKET_BUFFER = "" 
     

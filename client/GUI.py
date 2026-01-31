@@ -105,7 +105,7 @@ class Log_in_window(tk.Frame):
                     if data.get("type") == "nick_accepted":
                         self.kontroler.start_receiving_data() 
                     
-                else: # brak odpowiedzi lub rozłączenie
+                else: 
                     blad = json.dumps({"type": "network_error", "reason": "Serwer rozłączył się po wysłaniu nicku."})
                     self.kontroler.network_queue.put(blad)
                     
@@ -145,14 +145,12 @@ class Lobby(tk.Frame):
 
         self.buttons_frame = ttk.Frame(self)
             
-        # Dołącz od nastepnej rundy - in_round
         self.btn_join_next_round = ttk.Button(
             self.buttons_frame, 
             text="Dołącz od następnej rundy",
             command=lambda: self.send_lobby_choice("WANT_TO_PLAY_IN_NEXT_ROUND")
         )
         
-        # Czekaj na nową grę - in_round
         self.btn_queue = ttk.Button(
             self.buttons_frame, 
             text="Czekaj na nową grę",
@@ -170,13 +168,11 @@ class Lobby(tk.Frame):
     def start_idle_timer(self):
         self.cancel_idle_timer()
         self.idle_timeout_id = self.after(self.IDLE_TIMEOUT_MS, self.force_quit_on_timeout) 
-        print(f"[IDLE TIMER] Timer automatycznego wyjścia wystartował.")
 
     def cancel_idle_timer(self):
         if self.idle_timeout_id:
             self.after_cancel(self.idle_timeout_id)
-            self.idle_timeout_id = None
-            print("[IDLE TIMER] Timer pytania o kontynuację anulowany.")   
+            self.idle_timeout_id = None 
 
     def force_quit_on_timeout(self): 
         self.idle_timeout_id = None 
@@ -188,7 +184,7 @@ class Lobby(tk.Frame):
         
     def start_countdown(self, seconds):
         if self.countdown_id:
-            self.after_cancel(self.countdown_id) # anuluj poprzedni timer, jeśli był
+            self.after_cancel(self.countdown_id) 
             
         self.remaining_time = seconds
         self.countdown_active = True
@@ -240,7 +236,7 @@ class Lobby(tk.Frame):
             self.btn_queue.config(state='normal')
         
         elif mode == 'LOBBY':
-            # wysyłanie WANT_TO_PLAY automatycznie
+            # wysyłanie WANT_TO_PLAY 
             pass
             
     def send_lobby_choice(self, choice_type):
@@ -252,12 +248,10 @@ class Lobby(tk.Frame):
 
         if choice_type == "WANT_TO_PLAY":
         
-        # timer IDLE startuje tylko, jeśli nie trwa countdown
             if not self.is_countdown_active:
                 self.start_idle_timer()
             else:
                 self.cancel_idle_timer()
-                print("[IDLE TIMER] Kliknięcie w trakcie COUNTDOWN. Zablokowano start timera IDLE.")
 
 # -------------------------------- okno gry -------------------------------------------------
 
@@ -300,7 +294,7 @@ class Game_window(tk.Frame):
         self.warning_label.pack(pady=5)
         
         self.auto_send_timer_id = None
-        self.answers_sent = False #zapobieganie wysylania dwa razy
+        self.answers_sent = False 
 
     def start_round_gui(self, round_num, letter, points):
         self.answers_sent = False
@@ -329,7 +323,6 @@ class Game_window(tk.Frame):
             entry.config(state='disabled')
 
         if self.auto_send_timer_id:
-            print("[DEBUG] Anuluję timer odliczania, bo odpowiedzi zostały wysłane.")
             self.after_cancel(self.auto_send_timer_id)
             self.auto_send_timer_id = None
 
@@ -352,7 +345,6 @@ class Game_window(tk.Frame):
 
     def activate_time_warning(self, seconds):
         if self.answers_sent:
-            print("[DEBUG] Otrzymano TIME_WARNING, ale odpowiedzi są już wysłane. Ignoruję.")
             return 
         self.btn_stop.config(state='disabled')
         self.remaining_warning_time = seconds
@@ -395,7 +387,6 @@ class Result_window(tk.Frame):
         )
         self.btn_join_new.grid(row=0, column=0, padx=10)
 
-        # przycisk wyjścia
         self.btn_quit = ttk.Button(btn_frame, text="Wyjdź z gry", command=self.kontroler.on_closing)
         self.btn_quit.grid(row=0, column=1, padx=10)
 
@@ -463,7 +454,7 @@ class App(tk.Tk):
 
         self.pokaz_ekran(Log_in_window)
 
-    def start_receiving_data(self): # tworzy watek odbiorczy
+    def start_receiving_data(self): 
         if self.socket_polaczenia and not self.receiver_thread:
             self.receiver_thread = ReceiverThread( 
                 sock=self.socket_polaczenia,
@@ -491,7 +482,7 @@ class App(tk.Tk):
 
 
     def wyslij_wiadomosc_do_serwera(self, dane):
-        print(f"Wysylam wiadomosc - {dane}")
+        #print(f"Wysylam wiadomosc - {dane}")
         if self.socket_polaczenia:
             threading.Thread(
                 target=network_manager.send_json, 
@@ -531,7 +522,7 @@ class App(tk.Tk):
     
         try:
             data = json.loads(odpowiedz_json_string)
-            print(f"dostalam wiadomosc - {data}")
+            #print(f"dostalam wiadomosc - {data}")
             message_type = data.get("type")
             
             handlers = {
@@ -571,7 +562,7 @@ class App(tk.Tk):
             f"Wybrany przez ciebie nick jest już zajęty."
         )
         
-        try:   #znowu mozna kliknac
+        try:   
             self.ekrany['Log_in_window'].connect_button.config(state='normal')
         except KeyError:
             print("Nie można odblokować przycisku, ekran logowania niedostępny.")
@@ -599,7 +590,6 @@ class App(tk.Tk):
         current_round = data.get("current_round", 0)
 
         if game_state == "IN_ROUND" or game_state == "GAME_OVER":
-            # zawsze zatrzymujemy licznik, jeśli gra wystartowała lub się skończyła
             ekran_lobby.is_joined = False
             ekran_lobby.stop_countdown() 
             ekran_lobby.cancel_idle_timer()
@@ -624,7 +614,6 @@ class App(tk.Tk):
                 if time_remaining is not None:
                     try:
                         remaining = int(time_remaining)
-                        # Uruchamiamy lokalny timer
                         ekran_lobby.start_countdown(remaining) 
                         ekran_lobby.game_status_label.config(
                             text=f"GOTOWOŚĆ: Czekamy na pozostałych graczy." )
@@ -661,43 +650,25 @@ class App(tk.Tk):
                 ekran_lobby.player_message_label.config(
                     text="Możesz dołączyć do następnej rundy lub czekać na nową grę."
                 )
-        elif game_state == "GAME_OVER": #nieuzywane !!!
-            ekran_lobby.game_status_label.config(
-                text="ROZGRYWKA ZAKOŃCZONA"
-            )
-            ekran_lobby.player_message_label.config(
-                text="Rozgrywka zakończona. Trwa wypisywanie wyników, za chwilę zostaniesz \nprzekierowany do poczekalni."
-            )
 
     def handle_round_start(self, data):
         players_count = data.get("players_count", 0)
-
-        if players_count < 2: #nieuzywane !!! # sprawdzenie liczby graczy przy starcie
-            messagebox.showwarning(
-                "Błąd startu", 
-                "Niestety, w grze pozostało zbyt mało graczy. Gra zostanie zamknięta." #ewentualnie dodac obsluge nprzejsz
-            )
-            self.on_closing() 
-            return
 
         round_num = data.get("current_round")
         letter = data.get("letter")
         points = data.get("current_points", 0)
         
-        if self.current_round_active == round_num: # aby okno sie czaly czas nie otwieralo
+        if self.current_round_active == round_num: 
             return 
         self.current_round_active = round_num
 
-        self.ekrany['Lobby'].is_joined = False #reset flagi is_joined do wysylania want_to_play
+        self.ekrany['Lobby'].is_joined = False 
         self.pokaz_ekran(Game_window)
         self.ekrany['Game_window'].start_round_gui(round_num, letter, points)
-        
-        print(f"[GUI] Runda {round_num} wystartowała z {players_count} graczami.")
 
     def handle_time_warning(self, data):
 
-        if self.current_round_active is None: #ignorowanie time_warning gdy jest w trakcie gry
-            print("dostalam time_qwarning ignoruje")
+        if self.current_round_active is None:
             return
 
         time_left = data.get("time_remaining", 10)
