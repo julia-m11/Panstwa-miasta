@@ -17,26 +17,19 @@ class Log_in_window(tk.Frame):
         self.kontroler = kontroler 
         self.config(bg='lightgray') 
 
-        # ----------------------elementy okna-----------------
-
         title = tk.Label(self, text="MENU GŁÓWNE GRY", font=("Arial", 24, "bold"), bg = "lightblue")
         title.pack(pady=50)
 
-        #---------------pole na nick---------------------------
 
         etykieta_nick = ttk.Label(self, text="Wprowadź swój nick:", font=("Arial", 10))
         etykieta_nick.pack(pady=(10, 10)) 
         self.pole_nick = ttk.Entry(self, width=25)
         self.pole_nick.pack(padx=20, pady=5)
 
-        #---------------pole na ip serwera--------------
-
         etykieta_ip = ttk.Label(self, text="Wprowadź adres ip serwera:", font=("Arial", 10))
         etykieta_ip.pack(pady=(10, 10)) 
         self.pole_ip = ttk.Entry(self, width=25)
         self.pole_ip.pack(padx=20, pady=5)
-
-        #---------------pole na port------------------
 
         etykieta_port = ttk.Label(self, text="Wprowadź port:", font=("Arial", 10))
         etykieta_port.pack(pady=(10, 10)) 
@@ -63,7 +56,7 @@ class Log_in_window(tk.Frame):
             return
 
         try:
-            port_int = int(port_serwera) # konwersja na int i zapisanie wyniku
+            port_int = int(port_serwera)
         except ValueError:
             messagebox.showerror(
                 "Błąd Portu", 
@@ -85,7 +78,7 @@ class Log_in_window(tk.Frame):
         
         print(f"Próba połączenia z {ip_serwera}:{port_int} jako {nick}...")
 
-        threading.Thread( # aby okno gry nie zamarlo czekajac
+        threading.Thread( 
             target=self.initiate_connection_and_login, 
             args=(nick, ip_serwera, port_int), 
             daemon=True
@@ -101,14 +94,12 @@ class Log_in_window(tk.Frame):
             
             dane_do_wyslania = {
                 "type": "connecting_with_server", "nick": nick}
-            network_manager.send_json(sock, dane_do_wyslania) # wysyłka z tego wątku
+            network_manager.send_json(sock, dane_do_wyslania) 
             
-            # ODBIERAMY BLOKUJĄCO
             try:
                 first_json_response = network_manager.receive_first_message_blocking(sock)
                 
                 if first_json_response:
-                    
                     self.kontroler.network_queue.put(first_json_response)
                     data = json.loads(first_json_response)
                     if data.get("type") == "nick_accepted":
@@ -136,10 +127,10 @@ class Lobby(tk.Frame):
         self.is_joined = False
 
         self.countdown_id = None    
-        self.remaining_time = 0     # Czas pozostały w sekundach
-        self.countdown_active = False # czy odliczanie jest w toku
+        self.remaining_time = 0     
+        self.countdown_active = False  
 
-        self.idle_timeout_id = None # ID timera do pytania o dalsze czekanie
+        self.idle_timeout_id = None 
         self.IDLE_TIMEOUT_MS = 120000 
         self.is_countdown_active = False
 
@@ -168,8 +159,7 @@ class Lobby(tk.Frame):
             command=lambda: self.send_lobby_choice("WANT_TO_QUEUE")
         )
 
-        # Dołacz do nowej gry - lobby
-        self.btn_join_game = ttk.Button(
+        self.btn_join_game = ttk.Button( # nieuzywane !!!
             self.buttons_frame, 
             text="Dołącz do nowej gry",
             command=lambda: self.send_lobby_choice("WANT_TO_PLAY")
@@ -180,24 +170,20 @@ class Lobby(tk.Frame):
     def start_idle_timer(self):
         self.cancel_idle_timer()
         self.idle_timeout_id = self.after(self.IDLE_TIMEOUT_MS, self.force_quit_on_timeout) 
-        print(f"[IDLE TIMER] Timer automatycznego wyjścia wystartował ({self.IDLE_TIMEOUT_MS/1000}s).")
+        print(f"[IDLE TIMER] Timer automatycznego wyjścia wystartował.")
 
     def cancel_idle_timer(self):
-        """Anuluje timer pytania o kontynuację."""
         if self.idle_timeout_id:
             self.after_cancel(self.idle_timeout_id)
             self.idle_timeout_id = None
             print("[IDLE TIMER] Timer pytania o kontynuację anulowany.")   
 
     def force_quit_on_timeout(self): 
-        # wyświetla komunikat o braku graczy po upływie czasu oczekiwania i automatycznie zamyka aplikację.
         self.idle_timeout_id = None 
-        
         messagebox.showinfo(
             "Brak Graczy", 
             "Niestety, nikt nie dołączył do Lobby w ciągu 2 minut. Aplikacja zostanie zamknięta."
         )
-        
         self.kontroler.on_closing() 
         
     def start_countdown(self, seconds):
@@ -212,7 +198,6 @@ class Lobby(tk.Frame):
         self.update_countdown_gui()
 
     def update_countdown_gui(self):
-        """Cyklicznie aktualizuje licznik w dół."""
         if not self.countdown_active or self.remaining_time <= 0:
             self.countdown_label.config(text="STARTUJEMY!")
             self.countdown_active = False
@@ -323,20 +308,17 @@ class Game_window(tk.Frame):
         self.letter_label.config(text=f"LITERA: {letter}")
         self.points_label.config(text=f"Twoje punkty: {points}")
         
-        # Odblokowanie i czyszczenie pól
         for entry in self.entries.values():
             entry.config(state='normal')
             entry.delete(0, tk.END)
         self.btn_stop.config(state='normal')
 
-        self.warning_label.config(text="") # Czyścimy ostrzeżenie
+        self.warning_label.config(text="") 
         if self.auto_send_timer_id:
             self.after_cancel(self.auto_send_timer_id)
             self.auto_send_timer_id = None
 
     def send_answers(self, triggered_by_user=False):
-        """Pobiera dane i wysyła do serwera. is_first=True jeśli kliknął przycisk."""
-        
         if self.answers_sent:
             return 
         
@@ -357,7 +339,7 @@ class Game_window(tk.Frame):
             "answers": odpowiedzi
         })
         
-        if triggered_by_user: # w zaleznosci jak zosttaly wyslane wiadomosci
+        if triggered_by_user: 
             self.warning_label.config(
                 text="Odpowiedzi wysłane. Czekanie na innych...",
                 fg="green"
@@ -371,7 +353,7 @@ class Game_window(tk.Frame):
     def activate_time_warning(self, seconds):
         if self.answers_sent:
             print("[DEBUG] Otrzymano TIME_WARNING, ale odpowiedzi są już wysłane. Ignoruję.")
-            return # Już wysłaliśmy odpowiedzi, ignorujemy
+            return 
         self.btn_stop.config(state='disabled')
         self.remaining_warning_time = seconds
         self.update_warning_timer()
@@ -383,7 +365,7 @@ class Game_window(tk.Frame):
             self.auto_send_timer_id = self.after(1000, self.update_warning_timer)
         else:
             self.warning_label.config(text="CZAS MINĄŁ!")
-            self.send_answers(triggered_by_user=False) #automatyczne wysylanie
+            self.send_answers(triggered_by_user=False) 
 
 # ------------------------------okno wynikow---------------------------------------------
 
@@ -461,7 +443,6 @@ class App(tk.Tk):
         self.socket_polaczenia = None 
         self.sprawdz_kolejke_sieciowa() 
         self.current_round_active = None
-        #self.round_start_received = False
         
         #-----------------Gui-------------------
         
@@ -489,19 +470,17 @@ class App(tk.Tk):
                 queue=self.network_queue,
                 controller=self
             )
-            self.receiver_thread.start() # startujemy ciągły odbiór
-            print("start_receiving_data : wątek odbiorczy wystartował")
+            self.receiver_thread.start() 
 
-        
     def pokaz_ekran(self, klasa_ekranu):
         nazwa = klasa_ekranu.__name__
         frame = self.ekrany[nazwa]
         frame.tkraise()
 
         if klasa_ekranu == Lobby:
-            frame.show_lobby() # Wywołaj nową metodę w Lobby
+            frame.show_lobby() 
         
-    def on_closing(self): #przy wyjsciu z aplikacji
+    def on_closing(self): 
         if self.socket_polaczenia:
             try:
                 self.socket_polaczenia.close()
@@ -514,7 +493,6 @@ class App(tk.Tk):
     def wyslij_wiadomosc_do_serwera(self, dane):
         print(f"Wysylam wiadomosc - {dane}")
         if self.socket_polaczenia:
-            # wysłanie w osobnym wątku
             threading.Thread(
                 target=network_manager.send_json, 
                 args=(self.socket_polaczenia, dane),
@@ -577,7 +555,7 @@ class App(tk.Tk):
             
         self.network_queue.task_done()
 
-    #---------------do wersji org----------------------
+    #------------------handlery----------------------
 
     def handle_nick_accepted(self, data):
         session_id = data.get("session_id", "BRAK ID")
@@ -673,7 +651,6 @@ class App(tk.Tk):
         ekran_lobby.show_buttons(game_state, current_round)
                 
         if game_state == "IN_ROUND":
-            #current_round = data.get("current_round", 0)
             ekran_lobby.game_status_label.config(
                 text=f"GRA TRWA: Rozpoczęła się Runda {current_round}/5."
             )
@@ -684,7 +661,7 @@ class App(tk.Tk):
                 ekran_lobby.player_message_label.config(
                     text="Możesz dołączyć do następnej rundy lub czekać na nową grę."
                 )
-        elif game_state == "GAME_OVER":
+        elif game_state == "GAME_OVER": #nieuzywane !!!
             ekran_lobby.game_status_label.config(
                 text="ROZGRYWKA ZAKOŃCZONA"
             )
@@ -695,8 +672,7 @@ class App(tk.Tk):
     def handle_round_start(self, data):
         players_count = data.get("players_count", 0)
 
-        # sprawdzenie liczby graczy przy starcie
-        if players_count < 2:
+        if players_count < 2: #nieuzywane !!! # sprawdzenie liczby graczy przy starcie
             messagebox.showwarning(
                 "Błąd startu", 
                 "Niestety, w grze pozostało zbyt mało graczy. Gra zostanie zamknięta." #ewentualnie dodac obsluge nprzejsz
@@ -711,7 +687,6 @@ class App(tk.Tk):
         if self.current_round_active == round_num: # aby okno sie czaly czas nie otwieralo
             return 
         self.current_round_active = round_num
-        #self.round_start_received = True
 
         self.ekrany['Lobby'].is_joined = False #reset flagi is_joined do wysylania want_to_play
         self.pokaz_ekran(Game_window)

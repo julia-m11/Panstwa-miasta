@@ -1,24 +1,23 @@
 import socket
 import json
 
-CLIENT_SOCKET_BUFFER = ""   # bufor do obsługi danych
+CLIENT_SOCKET_BUFFER = ""   
 
 def connect_to_server(ip, port): 
     try:
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # polaczenie tcp
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #  tcp
         client_socket.connect((ip, port))
         client_socket.settimeout(1.0)
-        return client_socket # zwraca polaczony socket
+        return client_socket 
         
     except Exception as e:
         print(f"BŁĄD - connect_to_server : Nie udało się połączyć i utworzyć socketu: {e}")
         return None
     
-def send_json(sock, data): # wysyła słownik jako JSON zakończony \n
+def send_json(sock, data): 
     try:
-        #json_message = json.dumps(data)
         json_message = json.dumps(data, separators=(',', ':'), ensure_ascii=False)
-        message = json_message + '\n' # zeby wiedziec gdzie koniec wiadomosci
+        message = json_message + '\n' 
         sock.sendall(message.encode('utf-8'))
         return True
     except Exception as e:
@@ -28,7 +27,7 @@ def get_next_message():
     global CLIENT_SOCKET_BUFFER
 
     if '\n' in CLIENT_SOCKET_BUFFER:
-        line, CLIENT_SOCKET_BUFFER = CLIENT_SOCKET_BUFFER.split('\n', 1) # jesli jest \n tniemy, zwraca tylko pelna wiadomosc
+        line, CLIENT_SOCKET_BUFFER = CLIENT_SOCKET_BUFFER.split('\n', 1) 
         return line
     return None # w przypadku  braku pelnej wiadomosci
 
@@ -68,7 +67,6 @@ def receive_first_message_blocking(sock, buffer_size=4096): # funkcja używana t
             
             data_string = data_bytes.decode('utf-8')
             local_buffer += data_string
-            #print(local_buffer)
 
             if '\n' in local_buffer:
                 line, remaining_data = local_buffer.split('\n', 1)
