@@ -157,12 +157,6 @@ class Lobby(tk.Frame):
             command=lambda: self.send_lobby_choice("WANT_TO_QUEUE")
         )
 
-        self.btn_join_game = ttk.Button( # nieuzywane !!!
-            self.buttons_frame, 
-            text="Dołącz do nowej gry",
-            command=lambda: self.send_lobby_choice("WANT_TO_PLAY")
-        )
-
         self.hide_buttons() 
 
     def start_idle_timer(self):
@@ -214,7 +208,6 @@ class Lobby(tk.Frame):
         self.kontroler.wyslij_wiadomosc_do_serwera({"type": "REQUEST_GAME_INFO"})
 
     def hide_buttons(self):
-        self.btn_join_game.grid_forget()
         self.btn_join_next_round.grid_forget()
         self.btn_queue.grid_forget()
         
@@ -242,7 +235,6 @@ class Lobby(tk.Frame):
     def send_lobby_choice(self, choice_type):
         self.kontroler.wyslij_wiadomosc_do_serwera({"type": choice_type})
         
-        self.btn_join_game.config(state='disabled')
         self.btn_queue.config(state='disabled')
         self.btn_join_next_round.config(state='disabled')
 
