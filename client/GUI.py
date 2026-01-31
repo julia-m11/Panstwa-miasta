@@ -700,7 +700,7 @@ class App(tk.Tk):
             print("dostalam time_qwarning ignoruje")
             return
 
-        time_left = data.get("time_left", 15)
+        time_left = data.get("time_remaining", 10)
         if 'Game_window' in self.ekrany:
             self.ekrany['Game_window'].activate_time_warning(time_left)
 

@@ -124,7 +124,7 @@ void Game::submitAnswers(std::shared_ptr<client> player, const std::string& msg)
     bool first_submission = submissions.empty();
     submissions.push_back(sub);
     if (first_submission && players.size() > 1) {
-        round_time_remaining = 15;
+        round_time_remaining = 10;
         time_warning_sent = false;
         forced_round_end = true;
     }
@@ -189,7 +189,7 @@ void Game::scoreRound() {
 bool Game::shouldSendTimeWarning() {
     if (state != GameState::IN_ROUND)
         return false;
-    if (!time_warning_sent && round_time_remaining == 15) {
+    if (!time_warning_sent && round_time_remaining == 10) {
         time_warning_sent = true;
         return true;
     }
@@ -318,21 +318,15 @@ void Game::resetGame() {
         if (std::find(players.begin(), players.end(), p) == players.end()) {
             players.push_back(p);
         }
-        p->join_intent = JoinIntent::NEXT_GAME; // Oni chcą grać na pewno
+        p->join_intent = JoinIntent::NEXT_GAME; 
     }
 
     queued_players.clear();
 
     for (auto& p : players) {
-        //if (p->join_intent == JoinIntent::NEXT_GAME) {
             p->resetPoints();
-            //p->join_intent = JoinIntent::NONE;
-            //still_playing.push_back(p);
-        //}
     }
 
-    //players = std::move(still_playing);
-    //queued_players.clear();
     next_round_players.clear();
     used_letters.clear();
     current_round = 0;
@@ -441,9 +435,6 @@ bool Game::tryStartLobbyCountdown() {
     }
     ready += queued_players.size();
     if (ready >= 2) {
-        //countdown = 45;
-        //current_round = 0;
-        //state = GameState::COUNTDOWN;
         resetGame();
         return true;
     }

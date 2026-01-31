@@ -69,7 +69,7 @@ void Server::run() {
         if (game.shouldSendTimeWarning()) {
             for (auto& p : game.getPlayers()) {
                 p->sendMessage(
-                    R"({"type":"TIME_WARNING","time_remaining":15})"
+                    R"({"type":"TIME_WARNING","time_remaining":10})"
                 );
             }
         }
@@ -148,7 +148,7 @@ void Server::handle_message(std::shared_ptr<client> client, const std::string& m
             for (auto& [fd, c] : clients) {
                 if (c->nick_accepted) {
                     c->sendMessage(
-                        R"({"type":"TIME_WARNING","time_remaining":15})"
+                        R"({"type":"TIME_WARNING","time_remaining":10})"
                     );
                 }
             }
@@ -214,8 +214,6 @@ void Server::handle_connecting(std::shared_ptr<client> c, const std::string& nic
     broadcast_game_status();
     std::cout << "Nick accepted: " << nick << std::endl;
 }
-
-
 
 
 void Server::broadcast_game_status() {
