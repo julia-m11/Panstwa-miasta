@@ -1,16 +1,21 @@
 ﻿# Panstwa-miasta
-
+Wszystkie komendy należy wykonywać w głównym folderze projektu.
 ## Budowanie projektu
-- zbudowanie całego projektu:
+- **zbudowanie całego projektu:**
   
-  make all
-- uruchomienie serwera:
+  `make`
+- **uruchomienie serwera:**
   
-  make run-server
-- uruchomienie klienta:
+  `make run-server`
+- **uruchomienie klienta:**
   
-  make run-client
-- wyczyszczenie buildu serwera:
+  `make run-client`
+- **czyszczenie plików kompilacji:**
   
-  make clean
+  `make clean`
+
+- **w przypadku błędu `ModuleNotFoundError: No module named 'tkinter'` przy uruchamianiu klienta:**
+
+  `sudo apt install python3-tk`
+
 
