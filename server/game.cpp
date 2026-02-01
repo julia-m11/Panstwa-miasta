@@ -89,8 +89,7 @@ void Game::removePlayer(int socket) {
     }
 
     if (players.size() < 2) {
-        state = GameState::LOBBY;
-        countdown = 45;
+        resetGame();
     }
 }
 
