@@ -1,7 +1,9 @@
 #include "game.hpp"
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <ctime>
+#include <iterator>
 #include <sstream>
 #include <map>
 
@@ -13,6 +15,7 @@ Game::Game()
       game_over_timer(0),  
       round_time_remaining(0),
       time_warning_sent(false),
+      round_started(false),
       round_start_pending(false),
       forced_round_end(false),
       scoring_pending(false),
@@ -109,11 +112,9 @@ void Game::submitAnswers(std::shared_ptr<client> player, const std::string& msg)
     for (const auto& cat : {"państwo","miasto","roślina","zwierzę","rzecz"}) {
         sub.answers[cat] = "";
     }
-    size_t pos = 0;
     for (const auto& cat : {"państwo","miasto","roślina","zwierzę","rzecz"}) {
         std::string search = std::string("\"") + cat + "\":\"";
-        pos = msg.find(search);
-        if (pos != std::string::npos) {
+        if (auto pos = msg.find(search); pos != std::string::npos) {
             pos += search.size();
             size_t end = msg.find("\"", pos);
             if (end != std::string::npos) {
@@ -138,11 +139,9 @@ static bool isValidWord(const std::string& s) {
     if (s.size() < 3)
         return false;
 
-    for (unsigned char c : s) {
-        if (!std::isalpha(c))
-            return false;
-    }
-    return true;
+    return std::all_of(s.begin(), s.end(), [](unsigned char c) {
+        return std::isalpha(c) != 0;
+    });
 }
 
 void Game::scoreRound() {
@@ -228,11 +227,8 @@ bool Game::tick() {
         return false;
 
     case GameState::GAME_OVER: {
-        size_t ready = 0;
-        for (auto& p : players) {
-            if (p->join_intent == JoinIntent::NEXT_GAME)
-                ready++;
-        }
+        size_t ready = std::count_if(players.begin(), players.end(),
+            [](const auto& p) { return p->join_intent == JoinIntent::NEXT_GAME; });
 
         if (ready >= 2) {
             resetGame();
@@ -262,7 +258,7 @@ void Game::startRound() {
         return;
     }
 
-    for (auto& p : next_round_players) {
+    for (const auto& p : next_round_players) {
         if (std::find(players.begin(), players.end(), p) == players.end()) {
             players.push_back(p);
         }
@@ -271,7 +267,7 @@ void Game::startRound() {
     next_round_players.clear();
 
     if (current_round == 0) { 
-        for (auto& p : players) {
+        for (const auto& p : players) {
             p->join_intent = JoinIntent::NONE; 
         }
     }
@@ -280,24 +276,21 @@ void Game::startRound() {
     current_round++;
     round_start_pending = true;
     if (current_round == 1) {
-        for (auto& p : players) {
+        for (const auto& p : players) {
             p->resetPoints();
         }
     }
     std::string allowed_letters = "ABCDEFGHIJKLMNOPRSTUWZ";
 
     std::vector<char> available;
-    for (char c : allowed_letters) {
-        if (std::find(used_letters.begin(), used_letters.end(), c) == used_letters.end()) {
-            available.push_back(c);
-        }
-    }
+    std::copy_if(allowed_letters.begin(), allowed_letters.end(), std::back_inserter(available),
+        [&](char c) {
+            return std::find(used_letters.begin(), used_letters.end(), c) == used_letters.end();
+        });
 
     if (available.empty()) {
         used_letters.clear();
-        for (char c : allowed_letters) {
-            available.push_back(c);
-        }
+        available.assign(allowed_letters.begin(), allowed_letters.end());
     }
 
     current_letter = available[std::rand() % available.size()];
@@ -312,9 +305,7 @@ void Game::startRound() {
 }
 
 void Game::resetGame() {
-    std::vector<std::shared_ptr<client>> still_playing;
-
-    for (auto& p : queued_players) {
+    for (const auto& p : queued_players) {
         if (std::find(players.begin(), players.end(), p) == players.end()) {
             players.push_back(p);
         }
@@ -323,8 +314,8 @@ void Game::resetGame() {
 
     queued_players.clear();
 
-    for (auto& p : players) {
-            p->resetPoints();
+    for (const auto& p : players) {
+        p->resetPoints();
     }
 
     next_round_players.clear();
@@ -337,11 +328,6 @@ void Game::resetGame() {
     scoring_pending = false;
     round_start_pending = false;
     time_warning_sent = false;
-
-    size_t ready_to_play = 0;
-    for (auto& p : players) {
-        if (p->join_intent == JoinIntent::NEXT_GAME) ready_to_play++;
-    }
 
     if (players.size() >= 2) {
         state = GameState::COUNTDOWN;
@@ -428,11 +414,8 @@ bool Game::wasPlayerInCurrentGame(std::shared_ptr<client> c) const {
 bool Game::tryStartLobbyCountdown() {
     if (state != GameState::LOBBY && state != GameState::GAME_OVER)
         return false;
-    size_t ready = 0;
-    for (auto& p : players) {
-        if (p->join_intent == JoinIntent::NEXT_GAME)
-            ready++;
-    }
+    size_t ready = std::count_if(players.begin(), players.end(),
+        [](const auto& p) { return p->join_intent == JoinIntent::NEXT_GAME; });
     ready += queued_players.size();
     if (ready >= 2) {
         resetGame();

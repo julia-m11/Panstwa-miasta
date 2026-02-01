@@ -21,12 +21,14 @@ Server::~Server() {
 void Server::setup_socket(int port) {
     listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     int opt = 1;
-    setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        perror("Błąd setsockopt");
+    }
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
-    bind(listen_fd, (sockaddr*)&addr, sizeof(addr));
+    bind(listen_fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr));
     listen(listen_fd, SOMAXCONN);
     fds.push_back({listen_fd, POLLIN, 0});
     std::cout << "Server listening on port " << port << std::endl;
@@ -134,7 +136,9 @@ void Server::handle_message(std::shared_ptr<client> client, const std::string& m
         if (pos == std::string::npos) return;
 
         std::string nick = msg.substr(pos + 8);
-        nick = nick.substr(0, nick.find("\""));
+        if (auto end = nick.find("\""); end != std::string::npos) {
+            nick.resize(end);
+        }
         handle_connecting(client, nick);
         return;
     }
@@ -246,9 +250,4 @@ void Server::broadcast_game_status() {
             c->sendMessage(game.gameStatusJson(c));
         }
     }
-}
-
-void Server::send_json(int fd, const std::string& json) {
-    send(fd, json.c_str(), json.size(), 0);
-    std::cout << "TX: " << json;
 }

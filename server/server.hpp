@@ -9,7 +9,7 @@
 
 class Server {
 public:
-    Server(int port);
+    explicit Server(int port);
     ~Server();
 
     void run();
@@ -31,7 +31,6 @@ private:
 
     void handle_connecting(std::shared_ptr<client> client, const std::string& nick);
 
-    void send_json(int fd, const std::string& json);
     void broadcast_game_status();
     void broadcast_round_start_if_needed();
 

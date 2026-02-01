@@ -49,8 +49,6 @@ private:
 
 public:
     Game();
-    public:
-    void setState(GameState newState) { state = newState; }
     GameState getState() const { return state; }
     int getCurrentRound() const;
 
