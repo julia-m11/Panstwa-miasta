@@ -244,6 +244,10 @@ class Lobby(tk.Frame):
             else:
                 self.cancel_idle_timer()
 
+    def reset_ui_lobby(self):
+        self.countdown_label.pack_forget()
+        self.countdown_label.config(text="")
+
 # -------------------------------- okno gry -------------------------------------------------
 
 class Game_window(tk.Frame):
@@ -456,11 +460,14 @@ class App(tk.Tk):
 
     def pokaz_ekran(self, klasa_ekranu):
         nazwa = klasa_ekranu.__name__
+        self.aktualna_nazwa_ekranu = nazwa
         frame = self.ekrany[nazwa]
-        frame.tkraise()
 
         if klasa_ekranu == Lobby:
+            frame.reset_ui_lobby()
             frame.show_lobby() 
+
+        frame.tkraise()
         
     def on_closing(self): 
         if self.socket_polaczenia:
@@ -587,6 +594,8 @@ class App(tk.Tk):
             ekran_lobby.is_countdown_active = False
             
         elif game_state == "LOBBY":
+            if getattr(self, 'aktualna_nazwa_ekranu', '') == 'Result_window':
+                return
 
             if self.current_round_active is not None: 
                 self.current_round_active = None  
