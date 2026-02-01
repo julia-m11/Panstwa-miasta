@@ -1,5 +1,5 @@
 ﻿# Panstwa-miasta
-Wszystkie komendy należy wykonywać w głównym folderze projektu. Serwer uruchamia na porcie 12345.
+Wszystkie komendy należy wykonywać w głównym folderze projektu. Serwer uruchamia się na porcie 12345.
 ## Budowanie projektu
 - **zbudowanie całego projektu:**
   
@@ -17,6 +17,7 @@ Wszystkie komendy należy wykonywać w głównym folderze projektu. Serwer uruch
 - **w przypadku błędu `ModuleNotFoundError: No module named 'tkinter'` przy uruchamianiu klienta:**
 
   `sudo apt install python3-tk`
+
 
 
 
