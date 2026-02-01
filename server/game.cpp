@@ -37,15 +37,19 @@ void Game::addPlayer(std::shared_ptr<client> p) {
     }
 
     p->resetPoints(); 
-    p->join_intent = JoinIntent::NONE;
+    p->join_intent = JoinIntent::NEXT_GAME;
 
     if (state == GameState::IN_ROUND || state == GameState::ROUND_SCORING) {
+        p->join_intent = JoinIntent::NONE;
         queued_players.push_back(p);
         return;
     }
     players.push_back(p);
 
-    if (players.size() >= 2 && state == GameState::LOBBY) {
+    size_t ready = std::count_if(players.begin(), players.end(),
+        [](const auto& pl) { return pl->join_intent == JoinIntent::NEXT_GAME; });
+
+    if (ready >= 2 && state == GameState::LOBBY) {
         state = GameState::COUNTDOWN;
         countdown = 45;
     }
@@ -60,6 +64,14 @@ void Game::removePlayer(int socket) {
         return;
     auto removed = *it;
     players.erase(it);
+
+    size_t ready_count = std::count_if(players.begin(), players.end(),
+        [](const auto& p) { return p->join_intent == JoinIntent::NEXT_GAME; });
+
+    if (state == GameState::COUNTDOWN && ready_count < 2) {
+        state = GameState::LOBBY;
+        countdown = 45;
+    }
 
     submissions.erase(
         std::remove_if(submissions.begin(), submissions.end(),
@@ -328,7 +340,10 @@ void Game::resetGame() {
     round_start_pending = false;
     time_warning_sent = false;
 
-    if (players.size() >= 2) {
+    size_t ready_to_play = std::count_if(players.begin(), players.end(),
+        [](const auto& p) { return p->join_intent == JoinIntent::NEXT_GAME; });
+
+    if (ready_to_play >= 2) {
         state = GameState::COUNTDOWN;
     } else {
         state = GameState::LOBBY;
@@ -362,9 +377,6 @@ std::string Game::gameStatusJson(std::shared_ptr<client>) const {
     else if (state == GameState::COUNTDOWN) {
         o << R"({"type":"GAME_STATUS","game_status":"LOBBY","waiting_status":"COUNTDOWN","time_remaining":)"
           << countdown << "}";
-    }
-    else if (state == GameState::GAME_OVER) {
-        o << R"({"type":"GAME_STATUS","game_status":"LOBBY","waiting_status":"IDLE"})";
     }
     return o.str();
 }

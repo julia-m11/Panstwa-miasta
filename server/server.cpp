@@ -63,6 +63,9 @@ void Server::run() {
                 c->sendMessage(game.finalScoresJson(c));
             }
         }
+        game.resetGame(); 
+        broadcast_game_status();
+
     }
 
     if (prev == GameState::GAME_OVER && now != GameState::GAME_OVER) {
