@@ -15,32 +15,62 @@ class Log_in_window(tk.Frame):
     def __init__(self, parent, kontroler):
         tk.Frame.__init__(self, parent)
         self.kontroler = kontroler 
-        self.config(bg='lightgray') 
+        
+        BG_COLOR = "#2C3E50" 
+        ACCENT_COLOR = "#3498DB" 
+        TEXT_COLOR = "#ECF0F1" 
+        
+        self.config(bg=BG_COLOR) 
+        style = ttk.Style()
+        style.configure("TLabel", background=BG_COLOR, foreground=TEXT_COLOR)
+        
+        title = tk.Label(
+            self, 
+            text="Państwa - Miasta", 
+            font=("Helvetica", 28, "bold"), 
+            bg=BG_COLOR, 
+            fg=ACCENT_COLOR
+        )
+        title.pack(pady=(70, 10))
+        form_container = tk.Frame(self, bg=BG_COLOR)
+        form_container.pack(expand=True)
 
-        title = tk.Label(self, text="MENU GŁÓWNE GRY", font=("Arial", 24, "bold"), bg = "lightblue")
-        title.pack(pady=50)
+        self.create_field(form_container, "Nick:", "pole_nick")
+        self.create_field(form_container, "Adres IP serwera:", "pole_ip")
+        self.create_field(form_container, "Port serwera:", "pole_port")
 
-
-        etykieta_nick = ttk.Label(self, text="Wprowadź swój nick:", font=("Arial", 10))
-        etykieta_nick.pack(pady=(10, 10)) 
-        self.pole_nick = ttk.Entry(self, width=25)
-        self.pole_nick.pack(padx=20, pady=5)
-
-        etykieta_ip = ttk.Label(self, text="Wprowadź adres ip serwera:", font=("Arial", 10))
-        etykieta_ip.pack(pady=(10, 10)) 
-        self.pole_ip = ttk.Entry(self, width=25)
-        self.pole_ip.pack(padx=20, pady=5)
-
-        etykieta_port = ttk.Label(self, text="Wprowadź port:", font=("Arial", 10))
-        etykieta_port.pack(pady=(10, 10)) 
-        self.pole_port = ttk.Entry(self, width=25)
-        self.pole_port.pack(padx=20, pady=5)
-
-        self.connect_button = ttk.Button(
-            self, text="POŁĄCZ",
+        self.connect_button = tk.Button(
+            self, 
+            text="POŁĄCZ",
+            font=("Helvetica", 12, "bold"),
+            bg="#27AE60", 
+            fg="white",
+            activebackground="#2ECC71",
+            activeforeground="white",
+            relief="flat",
+            width=20,
+            height=2,
+            cursor="hand2",
             command=self.connect_and_save
         )
-        self.connect_button.pack(pady=10, padx=20)
+        self.connect_button.pack(pady=(10, 100))
+
+    def create_field(self, parent, label_text, attr_name):
+        lbl = tk.Label(parent, text=label_text, font=("Helvetica", 9, "bold"), bg="#2C3E50", fg="#BDC3C7")
+        lbl.pack(anchor="w", padx=20)
+        
+        entry = tk.Entry(
+            parent, 
+            width=30, 
+            font=("Helvetica", 11), 
+            bg="#34495E", 
+            fg="white", 
+            insertbackground="white", 
+            relief="flat", 
+            borderwidth=10
+        )
+        entry.pack(padx=20, pady=(5, 15))
+        setattr(self, attr_name, entry)
         
     def connect_and_save(self):
         
@@ -122,7 +152,13 @@ class Lobby(tk.Frame):
     def __init__(self, parent, kontroler):
         tk.Frame.__init__(self, parent)
         self.kontroler = kontroler
-        self.config(bg='lightblue')
+    
+        BG_COLOR = "#2C3E50"      
+        ACCENT_COLOR = "#3498DB"  
+        TEXT_COLOR = "#ECF0F1"    
+        RED_COLOR = "#E74C3C"     
+        
+        self.config(bg=BG_COLOR)
         self.is_joined = False
 
         self.countdown_id = None    
@@ -133,28 +169,53 @@ class Lobby(tk.Frame):
         self.IDLE_TIMEOUT_MS = 120000 
         self.is_countdown_active = False
 
-        self.game_status_label = ttk.Label(self, text="", font=("Arial", 20), background='lightgray')
-        self.game_status_label.pack(pady=(40,20))
+        self.game_status_label = tk.Label(
+            self, text="OCZEKIWANIE NA SERWER...", 
+            font=("Helvetica", 22, "bold"), 
+            bg=BG_COLOR, 
+            fg=ACCENT_COLOR
+        )
+        self.game_status_label.pack(pady=(50, 10))
 
-        self.player_message_label = ttk.Label(self, text="", font=("Arial", 14), background='lightblue')
-        self.player_message_label.pack(pady=(10,10))
+        self.player_message_label = tk.Label(
+            self, text="", 
+            font=("Helvetica", 13), 
+            bg=BG_COLOR, 
+            fg=TEXT_COLOR
+        )
+        self.player_message_label.pack(pady=(5, 5))
 
-        self.countdown_label = ttk.Label(self, text="", font=("Arial", 20), foreground='red')
-        self.countdown_label.pack(pady=(10,10))
+        self.countdown_label = tk.Label(
+            self, text="", 
+            font=("Helvetica", 32, "bold"), 
+            bg=BG_COLOR, 
+            fg=RED_COLOR
+        )
+        self.countdown_label.pack(pady=(20, 20))
 
-        self.buttons_frame = ttk.Frame(self)
+        self.buttons_frame = tk.Frame(self, bg=BG_COLOR)
             
-        self.btn_join_next_round = ttk.Button(
+        self.btn_join_next_round = tk.Button(
             self.buttons_frame, 
-            text="Dołącz od następnej rundy",
+            text="DOŁĄCZ DO KOLEJNEJ RUNDY",
+            font=("Helvetica", 11, "bold"),
+            bg="#27AE60", fg="white",
+            activebackground="#2ECC71", activeforeground="white",
+            relief="flat", width=30, height=2, cursor="hand2",
             command=lambda: self.send_lobby_choice("WANT_TO_PLAY_IN_NEXT_ROUND")
         )
+        self.btn_join_next_round.pack(pady=10)
         
-        self.btn_queue = ttk.Button(
+        self.btn_queue = tk.Button(
             self.buttons_frame, 
-            text="Czekaj na nową grę",
+            text="CZEKAJ NA NOWĄ GRĘ",
+            font=("Helvetica", 11, "bold"),
+            bg="#2980B9", fg="white",
+            activebackground="#3498DB", activeforeground="white",
+            relief="flat", width=30, height=2, cursor="hand2",
             command=lambda: self.send_lobby_choice("WANT_TO_QUEUE")
         )
+        self.btn_queue.pack(pady=10)
 
         self.hide_buttons() 
 
@@ -254,38 +315,80 @@ class Game_window(tk.Frame):
     def __init__(self, parent, kontroler):
         tk.Frame.__init__(self, parent)
         self.kontroler = kontroler
-        self.config(bg='white')
+        
+        BG_COLOR = "#2C3E50"      
+        CARD_COLOR = "#34495E"   
+        ACCENT_COLOR = "#3498DB"  
+        TEXT_COLOR = "#ECF0F1"    
+        GOLD_COLOR = "#F1C40F"    
+        
+        self.config(bg=BG_COLOR)
 
-        self.info_frame = tk.Frame(self, bg='lightgray')
-        self.info_frame.pack(fill="x", pady=10)
+    
+        self.info_frame = tk.Frame(self, bg="#1A252F", height=60) # Ciemniejszy pasek na górze
+        self.info_frame.pack(fill="x", side="top")
 
-        self.round_label = tk.Label(self.info_frame, text="Runda: 1/5", font=("Arial", 12))
-        self.round_label.pack(side="left", padx=20)
+        self.round_label = tk.Label(
+            self.info_frame, text="RUNDA: 1/5", 
+            font=("Helvetica", 11, "bold"), bg="#1A252F", fg="#BDC3C7"
+        )
+        self.round_label.pack(side="left", padx=30, pady=15)
 
-        self.letter_label = tk.Label(self.info_frame, text="LITERA: -", font=("Arial", 20, "bold"), fg="blue")
+    
+        self.letter_label = tk.Label(
+            self.info_frame, text="LITERA: -", 
+            font=("Helvetica", 24, "bold"), bg="#1A252F", fg=ACCENT_COLOR
+        )
         self.letter_label.pack(side="left", expand=True)
 
-        self.points_label = tk.Label(self.info_frame, text="Twoje punkty: 0", font=("Arial", 12, "bold"))
-        self.points_label.pack(side="right", padx=20)
+        self.points_label = tk.Label(
+            self.info_frame, text="PUNKTY: 0", 
+            font=("Helvetica", 11, "bold"), bg="#1A252F", fg=GOLD_COLOR
+        )
+        self.points_label.pack(side="right", padx=30, pady=15)
 
-        self.table_frame = tk.Frame(self, bg='white')
-        self.table_frame.pack(pady=40)
+
+        self.table_frame = tk.Frame(self, bg=BG_COLOR)
+        self.table_frame.pack(pady=50)
 
         self.kategorie = ["Państwo", "Miasto", "Roślina", "Zwierzę", "Rzecz"]
         self.entries = {}
 
+
         for i, kat in enumerate(self.kategorie):
-            lbl = tk.Label(self.table_frame, text=kat, font=("Arial", 10, "bold"), bg='white')
-            lbl.grid(row=0, column=i, padx=5, pady=5)
+            # Kontener na każdą kolumnę (etykieta + pole)
+            col_frame = tk.Frame(self.table_frame, bg=BG_COLOR)
+            col_frame.grid(row=0, column=i, padx=10, pady=5)
+
+            lbl = tk.Label(
+                col_frame, text=kat.upper(), 
+                font=("Helvetica", 9, "bold"), bg=BG_COLOR, fg="#95A5A6"
+            )
+            lbl.pack(pady=(0, 5))
             
-            ent = ttk.Entry(self.table_frame, width=15)
-            ent.grid(row=1, column=i, padx=5, pady=5)
+            ent = tk.Entry(
+                col_frame, width=16, font=("Helvetica", 12), 
+                bg=CARD_COLOR, fg="white", insertbackground="white",
+                relief="flat", borderwidth=8
+            )
+            ent.pack()
             self.entries[kat.lower()] = ent
 
-        self.btn_stop = ttk.Button(self, text="ZATWIERDŹ", command=lambda: self.send_answers(triggered_by_user=True))
-        self.btn_stop.pack(pady=20)
+    
+        self.btn_stop = tk.Button(
+            self, text="ZATWIERDŹ ODPOWIEDZI", 
+            font=("Helvetica", 12, "bold"),
+            bg="#27AE60", fg="white",
+            activebackground="#2ECC71", activeforeground="white",
+            relief="flat", width=25, height=2, cursor="hand2",
+            command=lambda: self.send_answers(triggered_by_user=True)
+        )
+        self.btn_stop.pack(pady=30)
 
-        self.warning_label = tk.Label(self, text="", font=("Arial", 14, "bold"), fg="green", bg='white')
+        self.warning_label = tk.Label(
+            self, text="", font=("Helvetica", 12, "italic"), 
+            fg="#2ECC71", bg=BG_COLOR
+        )
         self.warning_label.pack(pady=5)
         
         self.auto_send_timer_id = None
@@ -360,30 +463,65 @@ class Result_window(tk.Frame):
     def __init__(self, parent, kontroler):
         tk.Frame.__init__(self, parent)
         self.kontroler = kontroler
-        self.config(bg='#f0f0f0')
         self.quit_timer_id = None
+        
+        BG_COLOR = "#2C3E50"
+        CARD_COLOR = "#34495E"
+        ACCENT_COLOR = "#3498DB"  
+        GOLD_COLOR = "#F1C40F"    
+        TEXT_COLOR = "#ECF0F1"
+        
+        self.config(bg=BG_COLOR)
 
-        tk.Label(self, text="KONIEC GRY - WYNIKI", font=("Arial", 26, "bold"), bg='#f0f0f0').pack(pady=30)
+        tk.Label(
+            self, text="PODSUMOWANIE ROZGRYWKI", 
+            font=("Helvetica", 26, "bold"), bg=BG_COLOR, fg=TEXT_COLOR
+        ).pack(pady=(50, 10))
 
-        self.personal_result_label = tk.Label(self, text="", font=("Arial", 18), bg='#f0f0f0', fg="blue")
+        self.personal_result_label = tk.Label(
+            self, text="", 
+            font=("Helvetica", 18, "bold"), bg=BG_COLOR, fg=ACCENT_COLOR
+        )
         self.personal_result_label.pack(pady=10)
 
-        tk.Label(self, text="TOP 3 GRACZY:", font=("Arial", 16, "underline"), bg='#f0f0f0').pack(pady=(20, 10))
-        self.ranking_label = tk.Label(self, text="", font=("Courier", 14), bg='white', relief="sunken", width=40, height=5)
+        tk.Label(
+            self, text="RANKING NAJLEPSZYCH:", 
+            font=("Helvetica", 12, "bold"), bg=BG_COLOR, fg="#95A5A6"
+        ).pack(pady=(30, 5))
+
+        self.ranking_label = tk.Label(
+            self, text="", 
+            font=("Consolas", 14), 
+            bg=CARD_COLOR, fg=GOLD_COLOR,
+            relief="flat", width=45, height=6,
+            padx=20, pady=10
+        )
         self.ranking_label.pack(pady=10)
 
-        btn_frame = tk.Frame(self, bg='#f0f0f0')
-        btn_frame.pack(pady=20)
+        btn_frame = tk.Frame(self, bg=BG_COLOR)
+        btn_frame.pack(pady=40)
 
-        self.btn_join_new = ttk.Button(
+        self.btn_join_new = tk.Button(
             btn_frame, 
-            text="Dołącz do nowej gry", 
+            text="NOWA GRA", 
+            font=("Helvetica", 11, "bold"),
+            bg="#27AE60", fg="white",
+            activebackground="#2ECC71", activeforeground="white",
+            relief="flat", width=18, height=2, cursor="hand2",
             command=self.return_to_lobby
         )
-        self.btn_join_new.grid(row=0, column=0, padx=10)
+        self.btn_join_new.grid(row=0, column=0, padx=15)
 
-        self.btn_quit = ttk.Button(btn_frame, text="Wyjdź z gry", command=self.kontroler.on_closing)
-        self.btn_quit.grid(row=0, column=1, padx=10)
+        self.btn_quit = tk.Button(
+            btn_frame, 
+            text="WYJDŹ", 
+            font=("Helvetica", 11, "bold"),
+            bg="#E74C3C", fg="white",
+            activebackground="#C0392B", activeforeground="white",
+            relief="flat", width=18, height=2, cursor="hand2",
+            command=self.kontroler.on_closing
+        )
+        self.btn_quit.grid(row=0, column=1, padx=15)
 
     def show_results(self, data):
         your_place = data.get("your_place", "?")
@@ -421,7 +559,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Państwa-miasta")
-        self.geometry("800x600")
+        self.geometry("1000x600")
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.receiver_thread = None
 
